@@ -251,7 +251,7 @@ section[hidden],[hidden]{display:none!important}
   </div>
 </div>
 
-<div class="ov" id="iov" role="dialog" aria-modal="true" aria-labelledby="ititle">
+<div class="ov" id="pov" role="dialog" aria-modal="true" aria-labelledby="ptitle"><div class="form"><h3 id="ptitle">Pago com qual conta?</h3><p class="hint" id="ptext" style="margin:0"></p><div class="fa col" id="pbtns"></div><button type="button" class="btn" id="p0">Cancelar</button></div></div><div class="ov" id="iov" role="dialog" aria-modal="true" aria-labelledby="ititle">
   <div class="form">
     <h3 id="ititle">Importar ou restaurar</h3>
     <p class="hint" style="margin:0">Escolha um arquivo de importação ou um backup baixado do app. Lançamentos que já existem são substituídos pela versão do arquivo; os que sumiram voltam; os que você criou à parte ficam.</p>
@@ -438,7 +438,7 @@ function meter(label,g,o,soft){const pc=o?g/o*100:0;return `<div class="meter"><
 /* balances */
 function saldo(c,until,withPend){
   let s=+c.inicial||0;
-  for(const t of all()){if(t.data<c.desde||t.data>until)continue;if(!withPend&&t.status==="pendente")continue;
+  for(const t of all()){const dt=(t.status==="pago"&&t.pagoEm)||t.data;if(dt<c.desde||dt>until)continue;if(!withPend&&t.status==="pendente")continue;
     if(t.tipo==="t"){if(t.para===c.nome)s+=+t.valor||0;if(t.de===c.nome)s-=+t.valor||0}
     else if(t.conta===c.nome)s+=val(t)}
   return s;
@@ -521,7 +521,7 @@ function renderList(){
       html+=`<div class="dayh"><span>${new Date(t.data+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</span><span>${brl.format(dd.reduce((s,x)=>s+val(x),0))}</span></div>`}
     if(t.tipo==="t"){
       html+=`<div class="row"><span class="t"><b>${esc(t.de)} → ${esc(t.para)}</b><small>${esc(["Transferência",t.obs].filter(Boolean).join(" · "))}</small></span><span class="val">${brl.format(+t.valor||0)}</span><span class="acts"><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;continue}
-    const v=val(t),meta=[t.obs,t.cat,t.classe,t.cartao?`${t.cartao}${t.parcela?" "+t.parcela:""}`:t.conta,t.recId?"conta fixa":""].filter(Boolean).map(esc).join(" · ");
+    const v=val(t),meta=[t.obs,t.cat,t.classe,t.cartao?`${t.cartao}${t.parcela?" "+t.parcela:""}${t.status==="pago"&&t.conta?" · pago com "+t.conta:""}`:t.conta,t.recId?"conta fixa":""].filter(Boolean).map(esc).join(" · ");
     html+=`<div class="row"><span class="t"><b>${esc(t.desc||t.cat)}</b><small>${meta}</small></span><span class="val ${v>=0?"in":"out"}">${v>=0?"+":"−"} ${brl.format(Math.abs(v))}</span><span class="acts"><button class="pill ${t.status==="pendente"?"no":"ok"}" data-st="${esc(t.id)}" title="Tocar para alternar entre pago e pendente">${t.status==="pendente"?"Pendente":(t.tipo==="r"?"Recebido":"Pago")}</button><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;
   }
   if(a.length>600)html+=`<div class="empty">Mostrando os 600 mais recentes. Use a busca para achar os outros.</div>`;
@@ -669,8 +669,8 @@ $("form").addEventListener("submit",async e=>{
 });
 $("td").onclick=()=>setTipo("d");$("tr").onclick=()=>setTipo("r");
 $("cancel").onclick=closeForm;
-for(const id of ["ov","iov","tov","dov"])$(id).addEventListener("click",e=>{if(e.target===$(id))$(id).classList.remove("on")});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")for(const id of ["ov","iov","tov","dov"])$(id).classList.remove("on")});
+for(const id of ["ov","iov","tov","dov","pov"])$(id).addEventListener("click",e=>{if(e.target===$(id))$(id).classList.remove("on")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")for(const id of ["ov","iov","tov","dov","pov"])$(id).classList.remove("on")});
 $("add").onclick=()=>openForm();
 
 /* transfers */
@@ -702,7 +702,7 @@ async function doDelete(ids,label){const olds=ids.map(id=>clone(findTx(id))).fil
 $("list").addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
   if(b.dataset.edit)openForm(findTx(b.dataset.edit));
-  else if(b.dataset.st){const t=findTx(b.dataset.st);if(!t)return;const old=t.status,nw=old==="pendente"?"pago":"pendente";
+  else if(b.dataset.st){const t=findTx(b.dataset.st);if(!t)return;if(t.status==="pendente"){openPay(t);return}const old=t.status,nw=old==="pendente"?"pago":"pendente";
     await saveTxs([{...t,status:nw}]);toast(`“${t.desc||t.cat}” marcado como ${nw==="pago"?(t.tipo==="r"?"recebido":"pago"):"pendente"}`,true,async()=>{const c=findTx(t.id);if(c)await saveTxs([{...c,status:old}])})}
   else if(b.dataset.del){const t=findTx(b.dataset.del);if(!t)return;
     if(t.grupo){delCtx=t;const n=all().filter(x=>x.grupo===t.grupo).length;$("dtext").textContent=`“${t.desc||t.cat}” é a parcela ${t.parcela} de uma compra com ${n} parcelas lançadas.`;$("dov").classList.add("on")}
@@ -710,7 +710,7 @@ $("list").addEventListener("click",async e=>{
   else if(b.dataset.act==="new")openForm();
   else if(b.dataset.act==="imp")openImp();
 });
-$("d0").onclick=()=>$("dov").classList.remove("on");
+/* pagar: escolhe de qual conta saiu (ou em qual entrou) o dinheiro */let payCtx=null;function openPay(t){payCtx=t;const r=t.tipo==="r";$("ptitle").textContent=r?"Recebido em qual conta?":"Pago com qual conta?";$("ptext").textContent=`${t.desc||t.cat} · ${brl.format(Math.abs(+t.valor||0))}${t.cartao?` · fatura ${t.cartao}`:""}`;const until=balUntil(),cs=[...(cfg.contas||[]).filter(c=>c.tipo!=="caixinha"),...(cfg.contas||[]).filter(c=>c.tipo==="caixinha")];const names=cs.map(c=>c.nome);if(t.conta&&!names.includes(t.conta))cs.unshift({nome:t.conta,tipo:"conta",inicial:0,desde:"2000-01-01"});$("pbtns").innerHTML=cs.map((c,i)=>`<button type="button" class="btn${c.nome===t.conta?" pri":""}" data-pc="${i}" style="display:flex;justify-content:space-between;gap:12px"><span>${esc(c.nome)}${c.tipo==="caixinha"?" <small style=\"opacity:.7\">caixinha</small>":""}</span><span style="font-weight:400">${brl.format(saldo(c,until,false))}</span></button>`).join("")||`<p class="hint">Nenhuma conta configurada. Cadastre em Contas.</p>`;$("pbtns").onclick=async e=>{const b=e.target.closest("[data-pc]");if(!b||!payCtx)return;const c=cs[+b.dataset.pc],old={status:payCtx.status,conta:payCtx.conta,pagoEm:payCtx.pagoEm},id=payCtx.id;$("pov").classList.remove("on");const cur2=findTx(id);if(!cur2)return;await saveTxs([{...cur2,status:"pago",conta:c.nome,pagoEm:todayS}]);toast(`“${cur2.desc||cur2.cat}” ${r?"recebido em":"pago com"} ${c.nome}`,true,async()=>{const x=findTx(id);if(x)await saveTxs([{...x,...old}])})};$("pov").classList.add("on")}$("p0").onclick=()=>$("pov").classList.remove("on");$("d0").onclick=()=>$("dov").classList.remove("on");
 $("d1").onclick=async()=>{if(!delCtx)return;$("dov").classList.remove("on");await doDelete([delCtx.id],"Parcela excluída")};
 $("d2").onclick=async()=>{if(!delCtx)return;$("dov").classList.remove("on");const ids=all().filter(x=>x.grupo===delCtx.grupo&&x.data>=delCtx.data).map(x=>x.id);await doDelete(ids,`${ids.length} parcelas excluídas`)};
 $("d3").onclick=async()=>{if(!delCtx)return;$("dov").classList.remove("on");const ids=all().filter(x=>x.grupo===delCtx.grupo).map(x=>x.id);await doDelete(ids,`${ids.length} parcelas excluídas`)};
