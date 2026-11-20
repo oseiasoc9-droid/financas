@@ -317,7 +317,7 @@ const normCfg=c=>({...clone(DEF_CFG),...(c||{}),kind:undefined,rev:undefined,cla
 /* storage: one document per month with a revision number; local edits win until the store confirms them,
    and a snapshot older than what this page already wrote never replaces it */
 const LKEY="financas-v2";
-const queue={},dirty={},ver={},lrev={};
+const queue={},dirty={},ver={},lrev={},base={};
 function loadLocal(){try{const o=JSON.parse(localStorage.getItem(LKEY)||"{}");months=o.months||{};cfg=normCfg(o.cfg)}catch(e){}}
 function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify({months,cfg}))}catch(e){note("O navegador não conseguiu salvar os dados.")}}
 function touch(k){ver[k]=(ver[k]||0)+1;dirty[k]=true}
@@ -327,11 +327,11 @@ function persist(k){
   const v=ver[k];lrev[k]=(lrev[k]||0)+1;const rev=lrev[k];
   const body=k==="cfg"?{...clone(cfg),kind:"cfg",rev}:{kind:"month",rev,txs:clone(months[k]||[])};
   const row={user_id:user.id,key:k==="cfg"?"cfg":"m-"+k,body,rev,updated_at:new Date().toISOString()};
-  const p=(queue[k]||Promise.resolve()).then(async()=>{const {error}=await sb.from("docs").upsert(row,{onConflict:"user_id,key"});if(error)throw error}).then(()=>{if(ver[k]===v)delete dirty[k]});
+  const p=(queue[k]||Promise.resolve()).then(()=>k==="cfg"?writeCfg(row,v):writeMonth(k));
   queue[k]=p.catch(e=>{note("Não foi possível salvar uma alteração. Verifique a internet e recarregue a página antes de continuar.",true)});
   return p;
 }
-function removeId(id){for(const k in months){const i=months[k].findIndex(t=>t.id===id);if(i>=0){months[k].splice(i,1);return k}}return null}
+/* gravação com fusão: lê a versão do banco, junta lançamento por lançamento (o que mudou aqui + o que mudou no outro aparelho) e grava só se ninguém gravou no meio */function merge3(b0,l0,r0){const B=new Map(b0.map(t=>[t.id,t])),L=new Map(l0.map(t=>[t.id,t])),out=new Map(r0.map(t=>[t.id,t]));for(const [id,t] of L){const b=B.get(id);if(!b||JSON.stringify(b)!==JSON.stringify(t))out.set(id,t)}for(const id of B.keys())if(!L.has(id))out.delete(id);return [...out.values()]}async function writeMonth(k){const key="m-"+k;for(let i=0;i<8;i++){const q=await sb.from("docs").select("body,rev").eq("user_id",user.id).eq("key",key).maybeSingle();if(q.error)throw q.error;const d=q.data,rrev=d?(+d.rev||0):0,rtx=d&&d.body&&Array.isArray(d.body.txs)?d.body.txs:[];const v=ver[k],merged=merge3(base[k]||[],months[k]||[],rtx),rev=Math.max(rrev,lrev[k]||0)+1,body={kind:"month",rev,txs:merged},now=new Date().toISOString();let ok=false;if(d){const u=await sb.from("docs").update({body,rev,updated_at:now}).eq("user_id",user.id).eq("key",key).eq("rev",rrev).select("key");if(u.error)throw u.error;ok=!!(u.data&&u.data.length)}else{const ins=await sb.from("docs").insert({user_id:user.id,key,body,rev,updated_at:now});if(ins.error){if(ins.error.code!=="23505")throw ins.error}else ok=true}if(ok){lrev[k]=rev;base[k]=clone(merged);if(ver[k]===v){months[k]=clone(merged);delete dirty[k];render()}return}await new Promise(r=>setTimeout(r,150+Math.random()*300))}throw new Error("conflito")}async function writeCfg(row,v){const {error}=await sb.from("docs").upsert(row,{onConflict:"user_id,key"});if(error)throw error;if(ver.cfg===v)delete dirty.cfg}function removeId(id){for(const k in months){const i=months[k].findIndex(t=>t.id===id);if(i>=0){months[k].splice(i,1);return k}}return null}
 function findTx(id){for(const k in months){const t=months[k].find(x=>x.id===id);if(t)return t}return null}
 async function saveTxs(list,removeIds=[]){
   const ks=new Set();
@@ -349,7 +349,7 @@ function applyRemote(rows){
   const seen=new Set();
   for(const r of rows){const rv=+r.rev||0;
     if(r.key==="cfg"){seen.add("cfg");if(!dirty.cfg&&rv>=(lrev.cfg||0)){lrev.cfg=rv;cfg=normCfg(r.body)}}
-    else if(r.key.startsWith("m-")&&r.body&&Array.isArray(r.body.txs)){const k=r.key.slice(2);seen.add(k);if(!dirty[k]&&rv>=(lrev[k]||0)){lrev[k]=rv;months[k]=r.body.txs.map(t=>({...t}))}}}
+    else if(r.key.startsWith("m-")&&r.body&&Array.isArray(r.body.txs)){const k=r.key.slice(2);seen.add(k);if(!dirty[k]&&rv>=(lrev[k]||0)){lrev[k]=rv;months[k]=r.body.txs.map(t=>({...t}));base[k]=clone(r.body.txs)}}}
   for(const k of Object.keys(months))if(!seen.has(k)&&!dirty[k]&&!(lrev[k]>0))delete months[k];
 }
 let syncing=false,lastSync=0;
