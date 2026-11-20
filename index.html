@@ -370,7 +370,7 @@ async function start(u){
   setInterval(()=>{if(document.visibilityState==="visible"&&!Object.keys(dirty).length)sync()},60000);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastSync>15000)sync()});
 }
-let authMode="login";
+let authMode="login",recovering=false;
 function showAuth(m,msg){authMode=m;$("auth").hidden=false;$("aerr").textContent="";$("aerr").className="err";
   $("lae").hidden=m==="newpass";$("lap").hidden=m==="forgot";$("asign").hidden=m!=="login";$("aforgot").hidden=m!=="login";
   $("ago").textContent={login:"Entrar",forgot:"Enviar link",newpass:"Salvar nova senha"}[m];
@@ -386,7 +386,7 @@ $("aform").addEventListener("submit",async e=>{e.preventDefault();const email=$(
   try{
     if(authMode==="login"){const {error}=await sb.auth.signInWithPassword({email,password:pw});if(error)throw error}
     else if(authMode==="forgot"){const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;$("aerr").className="ok";$("aerr").textContent="Pronto. Abra o link que enviamos para o seu e-mail."}
-    else if(authMode==="newpass"){if(pw.length<6)throw new Error("password 6");const {error}=await sb.auth.updateUser({password:pw});if(error)throw error;$("auth").hidden=true;toast("Senha alterada",false)}
+    else if(authMode==="newpass"){if(pw.length<6)throw new Error("password 6");const {error}=await sb.auth.updateUser({password:pw});if(error)throw error;recovering=false;history.replaceState(null,"",location.pathname);toast("Senha alterada",false);const s=await sb.auth.getSession();if(s.data.session)start(s.data.session.user)}
   }catch(err){$("aerr").textContent=authErr(err)}finally{$("ago").disabled=false}});
 $("asign").onclick=async()=>{if(authMode==="forgot")return showAuth("login");const email=$("aemail").value.trim(),pw=$("apass").value;
   if(!email||pw.length<6){$("aerr").textContent="Preencha o e-mail e uma senha de pelo menos 6 caracteres para criar a conta.";return}
@@ -397,13 +397,13 @@ $("aforgot").onclick=()=>showAuth("forgot");
 async function logout(){if(Object.keys(dirty).length){toast("Aguarde salvar as alterações e tente de novo",false);return}await sb.auth.signOut();location.reload()}
 async function boot(){
   if(!/^https:\/\//.test(SB_URL)||!window.supabase){fallback("Modo de teste: sem banco de dados configurado, os dados ficam só neste navegador.");return}
-  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  recovering=/type=recovery/.test(location.hash+location.search);sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}});
   sb.auth.onAuthStateChange((ev,session)=>{
-    if(ev==="PASSWORD_RECOVERY"){showAuth("newpass");return}
-    if(session&&session.user){if(!user||user.id===session.user.id)setTimeout(()=>start(session.user),0)}
+    if(ev==="PASSWORD_RECOVERY"){recovering=true;mode="local-wait";showAuth("newpass");return}
+    if(session&&session.user&&!recovering){if(!user||user.id===session.user.id)setTimeout(()=>start(session.user),0)}
     else if(ev==="SIGNED_OUT"){user=null;showAuth("login")}});
   const {data}=await sb.auth.getSession();
-  if(data&&data.session)start(data.session.user);else{mode="local-wait";showAuth("login")}
+  if(recovering){mode="local-wait";showAuth("newpass")}else if(data&&data.session)start(data.session.user);else{mode="local-wait";showAuth("login")}
 }
 function fallback(msg){mode="local";loadLocal();note(msg);render();genRecs()}
 
