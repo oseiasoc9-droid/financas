@@ -328,10 +328,10 @@ function persist(k){
   const body=k==="cfg"?{...clone(cfg),kind:"cfg",rev}:{kind:"month",rev,txs:clone(months[k]||[])};
   const row={user_id:user.id,key:k==="cfg"?"cfg":"m-"+k,body,rev,updated_at:new Date().toISOString()};
   const p=(queue[k]||Promise.resolve()).then(()=>k==="cfg"?writeCfg(row,v):writeMonth(k));
-  queue[k]=p.catch(e=>{note("Não foi possível salvar uma alteração. Verifique a internet e recarregue a página antes de continuar.",true)});
+  queue[k]=p.catch(e=>{note(navigator.onLine?"Não foi possível salvar agora; o app tenta de novo sozinho em instantes.":"Sem internet: suas alterações estão guardadas neste aparelho e serão enviadas quando a conexão voltar.",true)});
   return p;
 }
-/* gravação com fusão: lê a versão do banco, junta lançamento por lançamento (o que mudou aqui + o que mudou no outro aparelho) e grava só se ninguém gravou no meio */function merge3(b0,l0,r0){const B=new Map(b0.map(t=>[t.id,t])),L=new Map(l0.map(t=>[t.id,t])),out=new Map(r0.map(t=>[t.id,t]));for(const [id,t] of L){const b=B.get(id);if(!b||JSON.stringify(b)!==JSON.stringify(t))out.set(id,t)}for(const id of B.keys())if(!L.has(id))out.delete(id);return [...out.values()]}async function writeMonth(k){const key="m-"+k;for(let i=0;i<8;i++){const q=await sb.from("docs").select("body,rev").eq("user_id",user.id).eq("key",key).maybeSingle();if(q.error)throw q.error;const d=q.data,rrev=d?(+d.rev||0):0,rtx=d&&d.body&&Array.isArray(d.body.txs)?d.body.txs:[];const v=ver[k],merged=merge3(base[k]||[],months[k]||[],rtx),rev=Math.max(rrev,lrev[k]||0)+1,body={kind:"month",rev,txs:merged},now=new Date().toISOString();let ok=false;if(d){const u=await sb.from("docs").update({body,rev,updated_at:now}).eq("user_id",user.id).eq("key",key).eq("rev",rrev).select("key");if(u.error)throw u.error;ok=!!(u.data&&u.data.length)}else{const ins=await sb.from("docs").insert({user_id:user.id,key,body,rev,updated_at:now});if(ins.error){if(ins.error.code!=="23505")throw ins.error}else ok=true}if(ok){lrev[k]=rev;base[k]=clone(merged);if(ver[k]===v){months[k]=clone(merged);delete dirty[k];render()}return}await new Promise(r=>setTimeout(r,150+Math.random()*300))}throw new Error("conflito")}async function writeCfg(row,v){const {error}=await sb.from("docs").upsert(row,{onConflict:"user_id,key"});if(error)throw error;if(ver.cfg===v)delete dirty.cfg}function removeId(id){for(const k in months){const i=months[k].findIndex(t=>t.id===id);if(i>=0){months[k].splice(i,1);return k}}return null}
+/* gravação com fusão: lê a versão do banco, junta lançamento por lançamento (o que mudou aqui + o que mudou no outro aparelho) e grava só se ninguém gravou no meio */function merge3(b0,l0,r0){const B=new Map(b0.map(t=>[t.id,t])),L=new Map(l0.map(t=>[t.id,t])),out=new Map(r0.map(t=>[t.id,t]));for(const [id,t] of L){const b=B.get(id);if(!b||JSON.stringify(b)!==JSON.stringify(t))out.set(id,t)}for(const id of B.keys())if(!L.has(id))out.delete(id);return [...out.values()]}async function writeMonth(k){const key="m-"+k;for(let i=0;i<8;i++){const q=await sb.from("docs").select("body,rev").eq("user_id",user.id).eq("key",key).maybeSingle();if(q.error)throw q.error;const d=q.data,rrev=d?(+d.rev||0):0,rtx=d&&d.body&&Array.isArray(d.body.txs)?d.body.txs:[];const v=ver[k],merged=merge3(base[k]||[],months[k]||[],rtx),rev=Math.max(rrev,lrev[k]||0)+1,body={kind:"month",rev,txs:merged},now=new Date().toISOString();let ok=false;if(d){const u=await sb.from("docs").update({body,rev,updated_at:now}).eq("user_id",user.id).eq("key",key).eq("rev",rrev).select("key");if(u.error)throw u.error;ok=!!(u.data&&u.data.length)}else{const ins=await sb.from("docs").insert({user_id:user.id,key,body,rev,updated_at:now});if(ins.error){if(ins.error.code!=="23505")throw ins.error}else ok=true}if(ok){lrev[k]=rev;base[k]=clone(merged);if(ver[k]===v){months[k]=clone(merged);delete dirty[k];render()}return}await new Promise(r=>setTimeout(r,150+Math.random()*300))}throw new Error("conflito")}async function writeCfg(row,v){const {error}=await sb.from("docs").upsert(row,{onConflict:"user_id,key"});if(error)throw error;if(ver.cfg===v)delete dirty.cfg}/* modo offline: guarda os dados e as alterações pendentes neste aparelho e envia quando a internet voltar */let cacheT=null;const lastKey="financas-last-user";function cacheKey(){return user?"financas-cache-"+user.id:null}function scheduleCache(){if(!user)return;clearTimeout(cacheT);cacheT=setTimeout(()=>{try{localStorage.setItem(cacheKey(),JSON.stringify({months,cfg,base,lrev,dirty:Object.keys(dirty)}))}catch(e){}},300)}function loadCache(u){try{const o=JSON.parse(localStorage.getItem("financas-cache-"+u.id)||"null");if(!o)return false;months=o.months||{};cfg=normCfg(o.cfg);Object.assign(base,o.base||{});Object.assign(lrev,o.lrev||{});for(const k of o.dirty||[])dirty[k]=true;return true}catch(e){return false}}let flushing=false;async function flush(){if(!sb||!user||flushing||!navigator.onLine)return;const ks=Object.keys(dirty);if(!ks.length)return;flushing=true;try{for(const k of ks)await persist(k)}finally{flushing=false;if(!Object.keys(dirty).length){noteErr=false;note(`Tudo sincronizado. Conectado como ${user.email}.`,false,true)}scheduleCache()}}function removeId(id){for(const k in months){const i=months[k].findIndex(t=>t.id===id);if(i>=0){months[k].splice(i,1);return k}}return null}
 function findTx(id){for(const k in months){const t=months[k].find(x=>x.id===id);if(t)return t}return null}
 async function saveTxs(list,removeIds=[]){
   const ks=new Set();
@@ -357,17 +357,17 @@ async function sync(){
   if(!sb||!user||syncing)return;syncing=true;
   try{const {data,error}=await sb.from("docs").select("key,body,rev");if(error)throw error;applyRemote(data||[]);lastSync=Date.now();
     if(!noteErr)note(`Conectado como ${user.email}.`,false,true);if(mode!=="db"){mode="db"}render()}
-  catch(e){note("Sem conexão com o banco de dados agora. O que aparece pode estar desatualizado.",true)}
+  catch(e){note(navigator.onLine?"Sem conexão com o banco de dados agora. O que aparece pode estar desatualizado.":"Sem internet: mostrando os dados salvos neste aparelho. As alterações serão enviadas quando a conexão voltar.",true)}
   finally{syncing=false}
 }
 let started=false;
 async function start(u){
   user=u;$("auth").hidden=true;
   if(started){render();return}started=true;
-  note("Carregando seus dados…");
-  await sync();
+  try{localStorage.setItem(lastKey,JSON.stringify({id:u.id,email:u.email}))}catch(e){}if(loadCache(u)){mode="db";render()}else note("Carregando seus dados…");window.addEventListener("online",()=>{flush().then(sync)});
+  await flush();await sync();
   if(!genDone){genDone=true;genRecs()}
-  setInterval(()=>{if(document.visibilityState==="visible"&&!Object.keys(dirty).length)sync()},60000);
+  setInterval(()=>{if(document.visibilityState!=="visible")return;if(Object.keys(dirty).length)flush();else sync()},60000);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastSync>15000)sync()});
 }
 let authMode="login",recovering=false;
@@ -394,7 +394,7 @@ $("asign").onclick=async()=>{if(authMode==="forgot")return showAuth("login");con
     if(!data.session){$("aerr").className="ok";$("aerr").textContent="Conta criada. Confirme pelo link que enviamos para o seu e-mail e depois entre."}}
   catch(err){$("aerr").className="err";$("aerr").textContent=authErr(err)}finally{$("asign").disabled=false}};
 $("aforgot").onclick=()=>showAuth("forgot");
-async function logout(){if(Object.keys(dirty).length){toast("Aguarde salvar as alterações e tente de novo",false);return}await sb.auth.signOut();location.reload()}
+async function logout(){if(Object.keys(dirty).length){toast("Aguarde salvar as alterações e tente de novo",false);return}try{localStorage.removeItem(cacheKey());localStorage.removeItem(lastKey)}catch(e){}await sb.auth.signOut();location.reload()}
 async function boot(){
   if(!/^https:\/\//.test(SB_URL)||!window.supabase){fallback("Modo de teste: sem banco de dados configurado, os dados ficam só neste navegador.");return}
   recovering=/type=recovery/.test(location.hash+location.search);sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}});
@@ -402,7 +402,7 @@ async function boot(){
     if(ev==="PASSWORD_RECOVERY"){recovering=true;mode="local-wait";showAuth("newpass");return}
     if(session&&session.user&&!recovering){if(!user||user.id===session.user.id)setTimeout(()=>start(session.user),0)}
     else if(ev==="SIGNED_OUT"){user=null;showAuth("login")}});
-  const {data}=await sb.auth.getSession();
+  let data=null;try{data=(await Promise.race([sb.auth.getSession(),new Promise((_,r)=>setTimeout(()=>r(0),5000))])).data}catch(e){}if(!(data&&data.session)&&!navigator.onLine){try{const lu=JSON.parse(localStorage.getItem(lastKey)||"null");if(lu){start(lu);note("Sem internet: mostrando os dados salvos neste aparelho.",true);return}}catch(e){}}
   if(recovering){mode="local-wait";showAuth("newpass")}else if(data&&data.session)start(data.session.user);else{mode="local-wait";showAuth("login")}
 }
 function fallback(msg){mode="local";loadLocal();note(msg);render();genRecs()}
@@ -428,7 +428,7 @@ function route(){
   for(const s of VIEWS){$(s).hidden=s!==v;const a=$("n-"+s);if(s===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")}
   if(v==="painel")drawTide();
 }
-function render(){
+function render(){scheduleCache();
   $("mlabel").textContent=mName(cur.y,cur.m);
   if(mode==="loading"||mode==="local-wait")return;
   renderPainel();renderFilters();renderList();renderContas();renderBud();route();
@@ -759,7 +759,7 @@ $("csv").onclick=()=>{
 $("prev").onclick=()=>{const d=new Date(cur.y,cur.m-1,1);cur={y:d.getFullYear(),m:d.getMonth()};render()};
 $("next").onclick=()=>{const d=new Date(cur.y,cur.m+1,1);cur={y:d.getFullYear(),m:d.getMonth()};render()};
 window.addEventListener("hashchange",route);
-render();route();boot();
+render();route();boot();if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 </script>
 </body>
