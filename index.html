@@ -168,7 +168,7 @@ section[hidden],[hidden]{display:none!important}
     <div class="panel"><h2>Por categoria</h2><p class="hint">Gasto do mês. Com orçamento definido, a barra mostra quanto dele foi usado.</p><div id="meters"></div></div>
     <div class="panel"><h2>Faturas do mês</h2><p class="hint">Parcelas e compras lançadas em cada cartão.</p><div id="cards"></div></div>
   </div>
-  <div class="panel" id="prevp" style="margin-bottom:18px" hidden><h2>Previsões do mês</h2><p class="hint">Quanto já foi gasto de cada previsão. O que ainda falta entra como pendente no mês.</p><div class="legend2"><span class="badge ok" style="margin:0">concluída</span><span class="badge pend" style="margin:0">faltando</span><span class="badge over" style="margin:0">passou do previsto</span></div><div id="prevm"></div></div><div class="panel" style="margin-bottom:30px"><h2 id="yrt">O ano</h2><div class="legend"><span><b style="background:var(--sky)"></b>Receitas</span><span><b style="background:var(--pink)"></b>Despesas</span><span>Toque num mês para abri-lo</span></div><div class="yr" id="yr"></div></div>
+  <div class="panel" id="prevp" style="margin-bottom:18px" hidden><h2>Previsões do mês</h2><p class="hint">Quanto já foi gasto de cada previsão. O que ainda falta entra como pendente no mês.</p><div class="legend2"><span class="badge ok" style="margin:0">concluída</span><span class="badge pend" style="margin:0">faltando</span><span class="badge over" style="margin:0">passou do previsto</span></div><div id="prevm"></div></div><div class="panel" id="projp" style="margin-bottom:18px" hidden><h2>Projetos a reembolsar</h2><p class="hint">Gastos de trabalho pagos com dinheiro pessoal (categoria “Projeto…”). Não contam no teto nem nas metas. Quando o pagamento entrar, lance como receita na mesma categoria.</p><div id="projm"></div></div><div class="panel" style="margin-bottom:30px"><h2 id="yrt">O ano</h2><div class="legend"><span><b style="background:var(--sky)"></b>Receitas</span><span><b style="background:var(--pink)"></b>Despesas</span><span>Toque num mês para abri-lo</span></div><div class="yr" id="yr"></div></div>
 </section>
 
 <section id="lancamentos" hidden>
@@ -310,7 +310,7 @@ const all=()=>Object.values(months).flat();
 const inMonth=k=>months[k]||[];
 const sum=(a,tp)=>a.filter(t=>t.tipo===tp).reduce((s,t)=>s+(+t.valor||0),0);
 const uniq=(base,extra)=>[...new Set([...base,...extra.filter(Boolean)])];
-const cats=tp=>uniq(tp==="d"?CAT_D:CAT_R,all().filter(t=>t.tipo===tp).map(t=>t.cat));
+const cats=tp=>uniq(tp==="d"?CAT_D:CAT_R,all().filter(t=>t.tipo===tp||(tp==="r"&&reemb(t))).map(t=>t.cat));/* projetos: gastos pagos com dinheiro pessoal que serão reembolsados (categoria começando com "Projeto") */const reemb=t=>/^projeto/i.test(t.cat||"");
 const contaNames=()=>uniq((cfg.contas||[]).map(c=>c.nome),all().flatMap(t=>[t.conta,t.de,t.para]));
 const normCfg=c=>({...clone(DEF_CFG),...(c||{}),kind:undefined,rev:undefined,classes:{...((c&&c.classes)||DEF_CFG.classes)},budgets:{...((c&&c.budgets)||{})},contas:clone((c&&c.contas)||DEF_CONTAS),recs:clone((c&&c.recs)||[]),prevs:clone((c&&c.prevs)||[])});
 
@@ -461,9 +461,9 @@ function renderPainel(){
     ["A pagar",`<b class="pend">${brl.format(pend)}</b>`,"pendentes no mês"],
     ["Saldo do mês",`<b class="${s>=0?"okc":"out"}">${brl.format(s)}</b>`,"receitas − despesas"],
     ["Em contas",`<b>${brl.format(emConta)}</b>`,until===todayS?"hoje":`em ${new Date(until+"T12:00").toLocaleDateString("pt-BR")}`],
-    ["Teto usado",`<b>${teto?Math.round(d/teto*100):0}%</b>`,`de ${brl0.format(teto)}`]
+    ["Teto usado",`<b>${teto?Math.round(mt.filter(t=>t.tipo==="d"&&!reemb(t)).reduce((a,t)=>a+(+t.valor||0),0)/teto*100):0}%</b>`,`de ${brl0.format(teto)}`]
   ].map(([l,v,e],i)=>`<div class="fig1 ${["c-in","c-out",pend?"c-pend":"c-ok",s>=0?"c-ok":"c-neg","c-acc",teto&&d>teto?"c-neg":"c-acc"][i]}"><small>${l}</small>${v}<em>${e}</em></div>`).join("");
-  const dd=mt.filter(t=>t.tipo==="d");
+  const dd=mt.filter(t=>t.tipo==="d"&&!reemb(t)),dAll=mt.filter(t=>t.tipo==="d");
   const byCls={};for(const t of dd){const c=t.classe||"Sem classificação";byCls[c]=(byCls[c]||0)+(+t.valor||0)}
   const cl=uniq(Object.keys(cfg.classes||{}),Object.keys(byCls)).map(c=>({c,g:byCls[c]||0,o:teto*(+((cfg.classes||{})[c])||0)/100})).filter(x=>x.g||x.o);
   $("clshint").textContent=`Gasto contra a meta de cada classificação (teto de ${brl0.format(teto)}).`;
@@ -472,11 +472,11 @@ function renderPainel(){
   const mxc=Math.max(1,...Object.values(byCat));
   const rows=Object.entries(byCat).map(([c,g])=>({c,g,o:+(cfg.budgets||{})[c]||0})).sort((a,b)=>b.g-a.g);
   $("meters").innerHTML=rows.length?rows.map(x=>meter(x.c,x.g,x.o,x.g/mxc*100)).join(""):`<p class="hint">Sem gastos neste mês.</p>`;
-  const byCard={};for(const t of dd)if(t.cartao){const o=byCard[t.cartao]=byCard[t.cartao]||{v:0,n:0,p:0};o.v+=+t.valor||0;o.n++;if(t.status==="pendente")o.p+=+t.valor||0}
+  const byCard={};for(const t of dAll)if(t.cartao){const o=byCard[t.cartao]=byCard[t.cartao]||{v:0,n:0,p:0};o.v+=+t.valor||0;o.n++;if(t.status==="pendente")o.p+=+t.valor||0}
   const cs=Object.entries(byCard).sort((a,b)=>(CARDS[a[0]]||99)-(CARDS[b[0]]||99));
   const ctot=cs.reduce((a,[,o])=>a+o.v,0);
   $("cards").innerHTML=cs.length?cs.map(([c,o])=>`<div class="card ${o.p?"st-pend":"st-ok"}"><span>${esc(c)}${o.p?`<span class="badge pend">a pagar</span>`:`<span class="badge ok">paga</span>`}<br><small>${CARDS[c]?`vence dia ${CARDS[c]} · `:""}${o.n} ${o.n>1?"itens":"item"}${o.p?` · ${brl.format(o.p)} pendente`:""}</small></span><b>${brl.format(o.v)}</b>${o.p?`<span class="acts"><button class="btn sm" data-payfat="${esc(c)}">Pagar fatura · ${brl.format(o.p)}</button></span>`:""}</div>`).join("")+`<div class="card"><span><b style="text-align:left">Total em cartões</b></span><b>${brl.format(ctot)}</b></div>`:`<p class="hint">Nenhuma compra no cartão neste mês.</p>`;
-  {const fs=mt.filter(t=>t.prev).sort((a,b)=>(+b.plan||0)-(+a.plan||0));$("prevp").hidden=!fs.length;$("prevm").innerHTML=fs.map(f=>{const g=+f.gasto||0,o=+f.plan||0,rest=+f.valor||0;return rest>0?meter(f.desc,g,o,0,g>0?"warn":"",`<span class="badge pend">faltam ${brl0.format(rest)}</span>`):(g>o?meter(f.desc,g,o,0,"over",`<span class="badge over">passou ${brl0.format(g-o)}</span>`):meter(f.desc,g,o,0,"done",`<span class="badge ok">concluída</span>`))}).join("")}$("yrt").textContent=`O ano de ${cur.y}`;
+  {const fs=mt.filter(t=>t.prev).sort((a,b)=>(+b.plan||0)-(+a.plan||0));$("prevp").hidden=!fs.length;$("prevm").innerHTML=fs.map(f=>{const g=+f.gasto||0,o=+f.plan||0,rest=+f.valor||0;return rest>0?meter(f.desc,g,o,0,g>0?"warn":"",`<span class="badge pend">faltam ${brl0.format(rest)}</span>`):(g>o?meter(f.desc,g,o,0,"over",`<span class="badge over">passou ${brl0.format(g-o)}</span>`):meter(f.desc,g,o,0,"done",`<span class="badge ok">concluída</span>`))}).join("")}{const g={};for(const t of all())if(reemb(t)&&t.tipo!=="t"){const o=g[t.cat]=g[t.cat]||{d:0,r:0,n:0};if(t.tipo==="d"){o.d+=+t.valor||0;o.n++}else o.r+=+t.valor||0}const ps=Object.entries(g);$("projp").hidden=!ps.length;$("projm").innerHTML=ps.map(([c,o])=>{const f=o.d-o.r;return meter(`${c} · ${o.n} gastos`,o.r,o.d,0,"",f>0.004?`<span class="badge pend">a receber ${brl.format(f)}</span>`:(f<-0.004?`<span class="badge ok">reembolsado</span><span class="badge info">sobra ${brl.format(-f)}</span>`:`<span class="badge ok">reembolsado</span>`))}).join("")}$("yrt").textContent=`O ano de ${cur.y}`;
   const ms=[];for(let i=0;i<12;i++){const a=inMonth(ym(cur.y,i));ms.push({i,l:mName(cur.y,i,{month:"short"}).replace(".",""),r:sum(a,"r"),d:sum(a,"d")})}
   const mx=Math.max(1,...ms.flatMap(x=>[x.r,x.d]));
   $("yr").innerHTML=ms.map(x=>`<div class="mcol${x.i===cur.m?" sel":""}" data-m="${x.i}" role="button" tabindex="0" title="${x.l}: receitas ${brl.format(x.r)} · despesas ${brl.format(x.d)}"><div class="pair"><i style="height:${Math.max(0,x.r)/mx*100}%"></i><i style="height:${Math.max(0,x.d)/mx*100}%"></i></div><span>${x.l}</span></div>`).join("");
@@ -633,7 +633,7 @@ function openForm(t,opt={}){
   editing=t||null;formOpt=opt;document.querySelectorAll("#form .bad").forEach(x=>x.classList.remove("bad"));$("ftitle").textContent=t?"Editar lançamento":(opt.rep?"Nova conta fixa":"Novo lançamento");$("ferr").textContent="";
   $("frep").checked=!!opt.rep;$("fpn").value=1;$("fpm").value="total";
   setTipo(t?t.tipo:"d",t?t.cat:"");
-  fillSelect($("fcls"),uniq(CLS,Object.keys(cfg.classes||{})),t?t.classe:"","Escolha a classificação");
+  fillSelect($("fcls"),uniq([...CLS,"Reembolsável"],Object.keys(cfg.classes||{})),t?t.classe:"","Escolha a classificação");
   fillSelect($("fconta"),contaNames(),t?t.conta:"","Escolha a conta");
   fillSelect($("fcard"),uniq(Object.keys(CARDS),all().map(x=>x.cartao)),t?t.cartao:"","Sem cartão");
   $("fv").value=t?Math.abs(+(t.prev?t.plan:t.valor)).toLocaleString("pt-BR",{minimumFractionDigits:2}):"";$("fprev").checked=!(t&&t.semPrev);
