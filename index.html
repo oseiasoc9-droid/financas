@@ -127,7 +127,7 @@ svg text{font:13px "Hanken Grotesk",sans-serif;fill:var(--mute);paint-order:stro
 .box{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:#0c2a4a}
 .fa{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .fa.col{flex-direction:column;align-items:stretch}
-.err{color:var(--pink);font-size:14px;min-height:1em;margin:0}
+.err{color:var(--pink);font-size:14px;min-height:1em;margin:0} .bad{border-color:var(--pink)!important;box-shadow:0 0 0 1px var(--pink)}
 .chk{display:flex!important;align-items:center;gap:10px;color:var(--ink)!important;font-size:16px!important}
 .chk input{width:22px;height:22px;min-height:0;flex:none}
 .prev{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--mute)}
@@ -613,7 +613,7 @@ function parseMoney(s){s=String(s).replace(/[^\d,.-]/g,"");if(s.includes(","))s=
 
 /* transaction form */
 let formOpt={};
-function fillSelect(el,arr,val,blank){const a=val&&!arr.includes(val)?[...arr,val]:arr;el.innerHTML=(blank?`<option value="">${blank}</option>`:"")+a.map(v=>`<option${v===val?" selected":""}>${esc(v)}</option>`).join("");if(!val&&blank)el.value=""}
+/* campos obrigatórios do lançamento: não salva sem eles e marca em vermelho o que falta */function checkForm(){const miss=[],v=parseMoney($("fv").value),d=tipo==="d";const req=[["fv","valor",v>0],["fd","descrição",!!$("fd").value.trim()],["fcat","categoria",!!$("fcat").value],["fconta","conta",!!$("fconta").value],["fdt","data",!!$("fdt").value]];if(d)req.push(["fcls","classificação",!!$("fcls").value]);else $("fcls").classList.remove("bad");for(const [id,label,ok] of req){$(id).classList.toggle("bad",!ok);if(!ok)miss.push(label)}if(miss.length){$("ferr").textContent=miss.length===1&&miss[0]==="valor"&&$("fv").value?"Informe um valor maior que zero.":"Preencha: "+miss.join(", ")+".";const f=req.find(r=>!r[2]);if(f)$(f[0]).focus();return false}$("ferr").textContent="";return true}$("form").addEventListener("input",e=>{if(e.target&&e.target.classList)e.target.classList.remove("bad")});$("form").addEventListener("change",e=>{if(e.target&&e.target.classList)e.target.classList.remove("bad")});function fillSelect(el,arr,val,blank){const a=val&&!arr.includes(val)?[...arr,val]:arr;el.innerHTML=(blank?`<option value="">${blank}</option>`:"")+a.map(v=>`<option${v===val?" selected":""}>${esc(v)}</option>`).join("");if(!val&&blank)el.value=""}
 function syncForm(){
   const isNew=!editing||formOpt.recEdit,d=tipo==="d",n=Math.max(1,Math.round(+$("fpn").value||1));
   $("lcls").style.display=d?"":"none";$("lcard").style.display=d?"":"none";
@@ -627,14 +627,14 @@ function syncForm(){
     $("fpinfo").textContent=`${n}x de ${brl.format(r2(per))} = ${brl.format(r2(tot))}. A 1ª parcela entra no mês da data acima e as demais nos meses seguintes, como pendentes.`}
   else $("fpinfo").textContent="Para compra parcelada, informe o número de parcelas.";
 }
-function setTipo(t,cat){tipo=t;$("td").setAttribute("aria-pressed",t==="d");$("tr").setAttribute("aria-pressed",t==="r");fillSelect($("fcat"),cats(t),cat);syncForm()}
+function setTipo(t,cat){tipo=t;$("td").setAttribute("aria-pressed",t==="d");$("tr").setAttribute("aria-pressed",t==="r");fillSelect($("fcat"),cats(t),cat,"Escolha a categoria");syncForm()}
 function openForm(t,opt={}){
   if(t&&t.tipo==="t")return openTr(t);
-  editing=t||null;formOpt=opt;$("ftitle").textContent=t?"Editar lançamento":(opt.rep?"Nova conta fixa":"Novo lançamento");$("ferr").textContent="";
+  editing=t||null;formOpt=opt;document.querySelectorAll("#form .bad").forEach(x=>x.classList.remove("bad"));$("ftitle").textContent=t?"Editar lançamento":(opt.rep?"Nova conta fixa":"Novo lançamento");$("ferr").textContent="";
   $("frep").checked=!!opt.rep;$("fpn").value=1;$("fpm").value="total";
   setTipo(t?t.tipo:"d",t?t.cat:"");
-  fillSelect($("fcls"),uniq(CLS,Object.keys(cfg.classes||{})),t?t.classe:"","Sem classificação");
-  fillSelect($("fconta"),contaNames(),t?t.conta:"Mercado Pago");
+  fillSelect($("fcls"),uniq(CLS,Object.keys(cfg.classes||{})),t?t.classe:"","Escolha a classificação");
+  fillSelect($("fconta"),contaNames(),t?t.conta:"","Escolha a conta");
   fillSelect($("fcard"),uniq(Object.keys(CARDS),all().map(x=>x.cartao)),t?t.cartao:"","Sem cartão");
   $("fv").value=t?Math.abs(+t.valor).toLocaleString("pt-BR",{minimumFractionDigits:2}):"";
   $("fd").value=t?t.desc||"":"";$("fo").value=t?t.obs||"":"";$("fparc").value=t?t.parcela||"":"";
@@ -648,8 +648,8 @@ function closeForm(){$("ov").classList.remove("on");editing=null;formOpt={}}
 $("form").addEventListener("submit",async e=>{
   e.preventDefault();
   const v=parseMoney($("fv").value);
-  if(!(v>0)){$("ferr").textContent="Informe um valor maior que zero.";return}
-  const dt=$("fdt").value;if(!dt){$("ferr").textContent="Escolha a data.";return}
+  if(!checkForm())return;
+  const dt=$("fdt").value;
   const n=Math.max(1,Math.min(48,Math.round(+$("fpn").value||1)));
   const base={tipo,desc:$("fd").value.trim(),obs:$("fo").value.trim(),cat:$("fcat").value,classe:tipo==="d"?$("fcls").value:"",conta:$("fconta").value,cartao:tipo==="d"?$("fcard").value:""};
   const st=$("fpago").checked?"pago":"pendente";
