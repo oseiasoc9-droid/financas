@@ -263,7 +263,7 @@ section[hidden],[hidden]{display:none!important}
   </div>
 </div>
 <div class="auth" id="auth" hidden>
-  <form class="form" id="aform">
+  <form class="form" id="aform" novalidate>
     <h3>Minhas Finanças</h3>
     <p class="hint" id="atext" style="margin:0">Entre com seu e-mail e senha.</p>
     <label id="lae">E-mail<input id="aemail" type="email" autocomplete="email" required></label>
@@ -342,7 +342,7 @@ async function saveTxs(list,removeIds=[]){
 }
 let cfgTimer=null;
 function saveCfg(now){touch("cfg");clearTimeout(cfgTimer);if(now)return persist("cfg");cfgTimer=setTimeout(()=>persist("cfg"),600)}
-function note(s,isErr,withLogout){noteErr=!!isErr;$("savenote").innerHTML=esc(s)+(withLogout?` <button class="linkbtn" id="logout" style="display:inline;padding:0 0 0 6px">Sair</button>`:"");const b=$("logout");if(b)b.onclick=logout}
+function note(s,isErr,withLogout){noteErr=!!isErr;$("savenote").innerHTML=esc(s)+(withLogout?` <button class="linkbtn" id="chpw" style="display:inline;padding:0 0 0 6px">Trocar senha</button> <button class="linkbtn" id="logout" style="display:inline;padding:0 0 0 6px">Sair</button>`:"");const b=$("logout");if(b)b.onclick=logout;const c=$("chpw");if(c)c.onclick=()=>showAuth("newpass")}
 
 /* sincronização: lê tudo ao abrir, ao voltar para o app e a cada minuto; nunca troca uma versão local mais nova */
 function applyRemote(rows){
@@ -377,14 +377,14 @@ function showAuth(m,msg){authMode=m;$("auth").hidden=false;$("aerr").textContent
   $("atext").textContent=msg||{login:"Entre com seu e-mail e senha.",forgot:"Informe seu e-mail para receber um link de nova senha.",newpass:"Escolha uma nova senha."}[m];
   $("apass").setAttribute("autocomplete",m==="newpass"?"new-password":"current-password");
   if(m==="forgot"){$("aforgot").hidden=true;$("asign").hidden=false;$("asign").textContent="Voltar"}else $("asign").textContent="Criar conta";}
-const authErr=e=>{const m=String(e&&e.message||e||"");
+const authErr=e=>{const m=String(e&&e.message||e||"");if(m==="__email")return"Informe um e-mail válido.";if(m==="__pass")return"Informe a senha.";
   if(/invalid login/i.test(m))return"E-mail ou senha incorretos.";if(/not confirmed/i.test(m))return"Confirme seu e-mail pelo link que enviamos antes de entrar.";
   if(/signups? not allowed|signup is disabled/i.test(m))return"Novos cadastros estão desativados neste app.";if(/already registered/i.test(m))return"Este e-mail já tem conta. Use Entrar.";
   if(/password/i.test(m)&&/6|short|weak/i.test(m))return"A senha precisa ter pelo menos 6 caracteres.";if(/rate|too many/i.test(m))return"Muitas tentativas. Espere um minuto e tente de novo.";
   if(/fetch|network/i.test(m))return"Sem conexão. Verifique a internet.";return m||"Algo deu errado. Tente de novo."};
 $("aform").addEventListener("submit",async e=>{e.preventDefault();const email=$("aemail").value.trim(),pw=$("apass").value;$("aerr").className="err";$("aerr").textContent="";$("ago").disabled=true;
   try{
-    if(authMode==="login"){const {error}=await sb.auth.signInWithPassword({email,password:pw});if(error)throw error}
+    if(authMode!=="newpass"&&!/^\S+@\S+\.\S+$/.test(email))throw new Error("__email");if(authMode==="login"&&!pw)throw new Error("__pass");if(authMode==="login"){const {error}=await sb.auth.signInWithPassword({email,password:pw});if(error)throw error}
     else if(authMode==="forgot"){const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;$("aerr").className="ok";$("aerr").textContent="Pronto. Abra o link que enviamos para o seu e-mail."}
     else if(authMode==="newpass"){if(pw.length<6)throw new Error("password 6");const {error}=await sb.auth.updateUser({password:pw});if(error)throw error;recovering=false;history.replaceState(null,"",location.pathname);toast("Senha alterada",false);const s=await sb.auth.getSession();if(s.data.session)start(s.data.session.user)}
   }catch(err){$("aerr").textContent=authErr(err)}finally{$("ago").disabled=false}});
