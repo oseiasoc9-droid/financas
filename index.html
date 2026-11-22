@@ -410,7 +410,7 @@ function fallback(msg){mode="local";loadLocal();note(msg);render();genRecs().the
 /* recurring bills */
 function recTx(r,k){return{id:`rec-${r.id}-${k}`,recId:r.id,tipo:r.tipo,valor:+r.valor,desc:r.desc,obs:r.obs||"",cat:r.cat,classe:r.classe||"",conta:r.conta||"",cartao:r.cartao||"",parcela:"",status:"pendente",data:dayIn(k,r.dia),ts:Date.now()}}
 async function genRecs(only){
-  const horizon=addM(ym(today.getFullYear(),today.getMonth()),2),out=[];
+  const horizon=ym(today.getFullYear()+1,11),out=[];
   for(const r of cfg.recs||[]){if(!r.ativo||(only&&r.id!==only))continue;
     for(let k=r.inicio;k<=horizon;k=addM(k,1)){
       if((r.skip||[]).includes(k))continue;
