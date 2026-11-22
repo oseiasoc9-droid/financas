@@ -278,12 +278,12 @@ section[hidden],[hidden]{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script>
 {
-const CAT_D=["Feira","Alimentação","Despesas de casa","Despesas fixas","Automóvel","Transporte","Filhas","Saúde","Beleza","Vestuário","Lazer","Fast food","Datas especiais","Julieta","Viagens","Investimento","Outros"];
-const CAT_R=["Pró-labore","Rendimentos","Bonificações","Outras receitas"];
-const CLS=["Essencial","Conforto","Prazeres","Datas especiais","Investimento","Conhecimento","Metas","Filhas"];
+const CAT_D=["Feira","Padaria","Contas da casa","Automóvel","Saúde","Filhas","Julieta","Beleza","Casa: utilidades","Casa: reforma e móveis","Assinaturas e celular","Transporte","Vestuário","Datas especiais","Educação e livros","Tarifas e juros","Fast food","Lazer","Viagens","Outros"];
+const CAT_R=["Pró-labore","Rendimentos","Bonificações","Outras receitas"];const CAT_CLS={"Feira":"Essencial","Padaria":"Essencial","Contas da casa":"Essencial","Automóvel":"Essencial","Saúde":"Essencial","Filhas":"Essencial","Julieta":"Essencial","Beleza":"Essencial","Casa: utilidades":"Conforto","Casa: reforma e móveis":"Conforto","Assinaturas e celular":"Conforto","Transporte":"Conforto","Vestuário":"Conforto","Datas especiais":"Conforto","Educação e livros":"Essencial","Tarifas e juros":"Conforto","Outros":"Conforto","Fast food":"Prazeres","Lazer":"Prazeres","Viagens":"Prazeres"};/* guardar: o que foi para os cofrinhos menos o que saiu deles */const guardado=l=>{const bx=new Set((cfg.contas||[]).filter(c=>c.tipo==="caixinha").map(c=>c.nome));let s=0;for(const t of l)if(t.tipo==="t"){const a=bx.has(t.para),b=bx.has(t.de);if(a&&!b)s+=+t.valor||0;else if(b&&!a)s-=+t.valor||0}return Math.max(0,r2(s))};
+const CLS=["Essencial","Conforto","Prazeres","Guardar"];
 const CARDS={"Mercado Pago":4,"Neon O":11,"Nubank":14,"Credcard":17,"Neon T":21,"Revolut":25,"Riachuelo":20,"Clickcard":26,"Santander":30};
 const DEF_CONTAS=[{nome:"Mercado Pago",tipo:"conta",inicial:0,desde:"2026-01-01"},{nome:"Nubank Tainá",tipo:"conta",inicial:0,desde:"2026-01-01"},{nome:"Caixa Preta",tipo:"caixinha",inicial:0,desde:"2026-01-01"},{nome:"Reserva",tipo:"caixinha",inicial:0,desde:"2026-01-01"}];
-const DEF_CFG={teto:5500,classes:{"Essencial":55,"Conforto":7,"Metas":5,"Prazeres":3,"Investimento":10,"Conhecimento":10,"Datas especiais":5,"Filhas":5},budgets:{},contas:DEF_CONTAS,recs:[],prevs:[]};
+const DEF_CFG={teto:5500,classes:{"Essencial":65,"Conforto":21,"Prazeres":5,"Guardar":9},budgets:{},contas:DEF_CONTAS,recs:[],prevs:[]};
 const $=id=>document.getElementById(id);
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const brl0=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
@@ -464,7 +464,7 @@ function renderPainel(){
     ["Teto usado",`<b>${teto?Math.round(mt.filter(t=>t.tipo==="d"&&!reemb(t)).reduce((a,t)=>a+(+t.valor||0),0)/teto*100):0}%</b>`,`de ${brl0.format(teto)}`]
   ].map(([l,v,e],i)=>`<div class="fig1 ${["c-in","c-out",pend?"c-pend":"c-ok",s>=0?"c-ok":"c-neg","c-acc",teto&&d>teto?"c-neg":"c-acc"][i]}"><small>${l}</small>${v}<em>${e}</em></div>`).join("");
   const dd=mt.filter(t=>t.tipo==="d"&&!reemb(t)),dAll=mt.filter(t=>t.tipo==="d");
-  const byCls={};for(const t of dd){const c=t.classe||"Sem classificação";byCls[c]=(byCls[c]||0)+(+t.valor||0)}
+  const byCls={};for(const t of dd){const c=t.classe||"Sem classificação";byCls[c]=(byCls[c]||0)+(+t.valor||0)}{const gd=guardado(mt);if(gd>0)byCls.Guardar=(byCls.Guardar||0)+gd}
   const cl=uniq(Object.keys(cfg.classes||{}),Object.keys(byCls)).map(c=>({c,g:byCls[c]||0,o:teto*(+((cfg.classes||{})[c])||0)/100})).filter(x=>x.g||x.o);
   $("clshint").textContent=`Gasto contra a meta de cada classificação (teto de ${brl0.format(teto)}).`;
   $("clsm").innerHTML=cl.length?cl.map(x=>meter(x.c,x.g,x.o,0)).join(""):`<p class="hint">Sem gastos neste mês.</p>`;
@@ -596,7 +596,7 @@ function renderBud(){
   if($("clsb").dataset.k!==cl.join("|")){$("clsb").dataset.k=cl.join("|");$("clsb").innerHTML=cl.map((c,i)=>`<div class="cls"><span>${esc(c)}</span><input class="num" id="c${i}" inputmode="decimal" aria-label="% ${esc(c)}"><span class="n" id="cn${i}"></span><div class="track"><i id="ct${i}"></i></div></div>`).join("");
     cl.forEach((c,i)=>$("c"+i).addEventListener("input",e=>{cfg.classes[c]=parseMoney(e.target.value)||0;saveCfg();renderPainel();renderBud()}))}
   let tot=0;
-  cl.forEach((c,i)=>{const p=+(cfg.classes||{})[c]||0;tot+=p;const o=teto*p/100,g=mt.filter(t=>t.classe===c).reduce((a,t)=>a+(+t.valor||0),0);
+  cl.forEach((c,i)=>{const p=+(cfg.classes||{})[c]||0;tot+=p;const o=teto*p/100,g=mt.filter(t=>t.classe===c).reduce((a,t)=>a+(+t.valor||0),0)+(c==="Guardar"?guardado(inMonth(curK())):0);
     if(document.activeElement!==$("c"+i))$("c"+i).value=String(p).replace(".",",")+"%";
     $("cn"+i).textContent=`${brl.format(g)} de ${brl.format(o)}`;const pc=o?g/o*100:0;$("ct"+i).style.width=Math.min(pc,100)+"%";$("ct"+i).className=pc>100?"over":""});
   $("pcttot").textContent=`Distribuído: ${String(Math.round(tot*10)/10).replace(".",",")}%${tot!==100?" (o ideal é somar 100%)":""}`;
@@ -627,7 +627,7 @@ function syncForm(){
     $("fpinfo").textContent=`${n}x de ${brl.format(r2(per))} = ${brl.format(r2(tot))}. A 1ª parcela entra no mês da data acima e as demais nos meses seguintes, como pendentes.`}
   else $("fpinfo").textContent="Para compra parcelada, informe o número de parcelas.";
 }
-/* mostra "Abater da previsão" quando o lançamento cai numa previsão do mesmo mês */function updPrevBox(){const L=$("lprev");const dt=$("fdt").value;if(tipo!=="d"||!dt||(editing&&editing.prev)||$("frep").checked){L.style.display="none";return}const k=dt.slice(0,7),t={tipo:"d",desc:$("fd").value,obs:$("fo").value,cat:$("fcat").value};const x=prevOwner(t,k,null);if(!x){L.style.display="none";return}const own=editing&&!editing.semPrev&&editing.data.slice(0,7)===k&&prevHit(x.p,editing)?(+editing.valor||0):0,rest=r2((+x.f.valor||0)+(x.p.modo==="unica"?0:own));L.style.display="";$("fprevl").textContent=x.p.modo==="unica"?`Substitui a previsão “${x.p.nome}” de ${kName(k,{month:"long"})} (${brl.format(+x.f.plan||0)})`:`Abater da previsão “${x.p.nome}” de ${kName(k,{month:"long"})} · faltam ${brl.format(rest)}`}["fd","fo","fcat","fdt"].forEach(id=>{$(id).addEventListener("input",updPrevBox);$(id).addEventListener("change",updPrevBox)});function setTipo(t,cat){tipo=t;$("td").setAttribute("aria-pressed",t==="d");$("tr").setAttribute("aria-pressed",t==="r");fillSelect($("fcat"),cats(t),cat,"Escolha a categoria");syncForm();updPrevBox()}
+/* mostra "Abater da previsão" quando o lançamento cai numa previsão do mesmo mês */function updPrevBox(){const L=$("lprev");const dt=$("fdt").value;if(tipo!=="d"||!dt||(editing&&editing.prev)||$("frep").checked){L.style.display="none";return}const k=dt.slice(0,7),t={tipo:"d",desc:$("fd").value,obs:$("fo").value,cat:$("fcat").value};const x=prevOwner(t,k,null);if(!x){L.style.display="none";return}const own=editing&&!editing.semPrev&&editing.data.slice(0,7)===k&&prevHit(x.p,editing)?(+editing.valor||0):0,rest=r2((+x.f.valor||0)+(x.p.modo==="unica"?0:own));L.style.display="";$("fprevl").textContent=x.p.modo==="unica"?`Substitui a previsão “${x.p.nome}” de ${kName(k,{month:"long"})} (${brl.format(+x.f.plan||0)})`:`Abater da previsão “${x.p.nome}” de ${kName(k,{month:"long"})} · faltam ${brl.format(rest)}`}["fd","fo","fcat","fdt"].forEach(id=>{$(id).addEventListener("input",updPrevBox);$(id).addEventListener("change",updPrevBox)});function setTipo(t,cat){tipo=t;$("td").setAttribute("aria-pressed",t==="d");$("tr").setAttribute("aria-pressed",t==="r");fillSelect($("fcat"),cats(t),cat,"Escolha a categoria");syncForm();updPrevBox()}$("fcat").addEventListener("change",()=>{const c=CAT_CLS[$("fcat").value];if(tipo==="d"&&c){$("fcls").value=c;$("fcls").classList.remove("bad")}});
 function openForm(t,opt={}){
   if(t&&t.tipo==="t")return openTr(t);
   editing=t||null;formOpt=opt;document.querySelectorAll("#form .bad").forEach(x=>x.classList.remove("bad"));$("ftitle").textContent=t?"Editar lançamento":(opt.rep?"Nova conta fixa":"Novo lançamento");$("ferr").textContent="";
