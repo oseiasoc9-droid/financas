@@ -177,7 +177,7 @@ section[hidden],[hidden]{display:none!important}
     <input id="q" type="search" placeholder="Buscar descrição ou observação…" aria-label="Buscar">
     <select id="ft" aria-label="Tipo"><option value="">Todos os tipos</option><option value="r">Só receitas</option><option value="d">Só despesas</option><option value="t">Só transferências</option></select>
     <select id="fc" aria-label="Categoria"><option value="">Todas as categorias</option></select>
-    <select id="fs" aria-label="Status"><option value="">Pagos e pendentes</option><option value="pago">Só pagos</option><option value="pendente">Só pendentes</option></select>
+    <select id="fs" aria-label="Status"><option value="">Pagos e pendentes</option><option value="pago">Só pagos</option><option value="pendente">Só pendentes</option><option value="previsto">Só previstos</option></select>
     <select id="fk" aria-label="Cartão ou conta"><option value="">Todas as contas e cartões</option></select>
     <label class="chk" style="font-size:14px!important"><input type="checkbox" id="fy"> Buscar no ano todo</label>
   </div>
@@ -510,7 +510,7 @@ function renderFilters(){
 function renderList(){
   const q=$("q").value.trim().toLowerCase(),ft=$("ft").value,fc=$("fc").value,fs=$("fs").value,fk=$("fk").value,fy=$("fy").checked;
   const src=fy?all().filter(t=>t.data.startsWith(String(cur.y))):inMonth(curK());
-  const a=src.filter(t=>(!ft||t.tipo===ft)&&(!fc||t.cat===fc)&&(!fs||t.status===fs)&&(!fk||t.conta===fk||t.cartao===fk||t.de===fk||t.para===fk)&&(!q||((t.desc||"")+" "+(t.obs||"")).toLowerCase().includes(q))).sort((a,b)=>b.data.localeCompare(a.data)||(b.ts||0)-(a.ts||0));
+  const a=src.filter(t=>(!ft||t.tipo===ft)&&(!fc||t.cat===fc)&&(!fs||(fs==="previsto"?!!t.prev:(t.status===fs&&!(fs==="pendente"&&t.prev))))&&(!fk||t.conta===fk||t.cartao===fk||t.de===fk||t.para===fk)&&(!q||((t.desc||"")+" "+(t.obs||"")).toLowerCase().includes(q))).sort((a,b)=>b.data.localeCompare(a.data)||(b.ts||0)-(a.ts||0));
   {const isCard=fk&&!fy&&(fk in CARDS||all().some(t=>t.cartao===fk));if(isCard){const it=inMonth(curK()).filter(t=>t.tipo==="d"&&t.cartao===fk),pend=it.filter(t=>t.status==="pendente"),tp=pend.reduce((s,t)=>s+(+t.valor||0),0),tt=it.reduce((s,t)=>s+(+t.valor||0),0);$("fatbar").innerHTML=it.length?`<div class="panel" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px"><span>Fatura <b>${esc(fk)}</b> de ${esc(kName(curK(),{month:"long"}))}: ${brl.format(tt)}${CARDS[fk]?` · vence dia ${CARDS[fk]}`:""}<br><small style="color:var(--mute)">${pend.length?`${pend.length} ${pend.length>1?"itens pendentes":"item pendente"} · ${brl.format(tp)}`:"Tudo pago"}</small></span><span style="display:flex;gap:8px;flex-wrap:wrap">${it.some(t=>t.status==="pago")?`<button class="btn" data-unpayfat="${esc(fk)}">Desfazer pagamento</button>`:""}${pend.length?`<button class="btn pri" data-payfat="${esc(fk)}">Pagar fatura · ${brl.format(tp)}</button>`:""}</span></div>`:"";}else $("fatbar").innerHTML="";}$("tsum").textContent=a.length?`${a.length} lançamento${a.length>1?"s":""}${fy?` em ${cur.y}`:""} · entradas ${brl.format(sum(a,"r"))} · saídas ${brl.format(sum(a,"d"))}`:"";
   if(!a.length){
     const none=!all().length;
