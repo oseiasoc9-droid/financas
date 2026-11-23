@@ -94,7 +94,7 @@ svg text{font:13px "Hanken Grotesk",sans-serif;fill:var(--mute);paint-order:stro
 .mini{min-height:36px;min-width:36px;border-radius:8px;border:1px solid transparent;background:none;cursor:pointer;color:var(--mute)}
 .mini:hover{border-color:var(--line);color:var(--ink)}
 .dayh{padding:7px 16px;background:var(--panel);font-size:13px;color:var(--mute);display:flex;justify-content:space-between;gap:10px}
-.empty{padding:40px 20px;text-align:center;color:var(--mute)}
+.empty{padding:40px 20px;text-align:center;color:var(--mute)}.dhide{display:none!important}.dayh[data-day]{cursor:pointer;user-select:none;align-items:center;color:var(--ink);border-top:1px solid var(--line)}.dayh[data-day]:hover{filter:brightness(1.15)}.dayh .chev{display:inline-block;width:1.1em;font-style:normal;color:var(--mute);transition:transform .15s}.dayh.open .chev{transform:rotate(90deg)}.dayh .dn{margin-left:8px;color:var(--mute);font-size:12px}.tsumrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 10px}.tsumrow .tsum{margin:0}
 .empty .btn{margin:14px 6px 0}
 .cls{display:grid;grid-template-columns:minmax(0,1fr) 6.5em 12.5em minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .cls .n{white-space:nowrap;text-align:right;font-size:14px;color:var(--mute)}
@@ -181,7 +181,7 @@ section[hidden],[hidden]{display:none!important}
     <select id="fk" aria-label="Cartão ou conta"><option value="">Todas as contas e cartões</option></select>
     <label class="chk" style="font-size:14px!important"><input type="checkbox" id="fy"> Buscar no ano todo</label>
   </div>
-  <p class="tsum" id="tsum"></p>
+  <div class="tsumrow"><p class="tsum" id="tsum"></p><button type="button" class="btn sm" id="dexp" aria-pressed="false">Expandir tudo</button></div>
   <div id="fatbar"></div><div class="list" id="list"></div>
   <div class="tools"><button class="btn" id="imp">Importar ou restaurar</button><button class="btn" id="bkp">Baixar backup</button><button class="btn" id="csv">Baixar CSV</button></div>
 </section>
@@ -516,19 +516,19 @@ function renderList(){
     const none=!all().length;
     $("list").innerHTML=`<div class="empty">${none?"Você ainda não tem lançamentos.":"Nada encontrado com esses filtros."}<br>${none?`<button class="btn pri" data-act="imp">Importar minha planilha</button><button class="btn" data-act="new">Lançar manualmente</button>`:""}</div>`;return}
   let html="",lastD="";
-  for(const t of a.slice(0,600)){
+  const openD=d=>diasAll||!!q||diasOpen.has(d);$("dexp").textContent=diasAll?"Recolher tudo":"Expandir tudo";$("dexp").setAttribute("aria-pressed",diasAll);$("dexp").hidden=!!q;for(const t of a.slice(0,600)){const hid=openD(t.data)?"":" dhide";
     if(t.data!==lastD){lastD=t.data;const dd=a.filter(x=>x.data===t.data);
-      html+=`<div class="dayh"><span>${new Date(t.data+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</span><span>${brl.format(dd.reduce((s,x)=>s+val(x),0))}</span></div>`}
+      html+=`<div class="dayh${hid?"":" open"}" data-day="${t.data}" role="button" tabindex="0" aria-expanded="${!hid}"><span><i class="chev">▸</i>${new Date(t.data+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}<small class="dn">${dd.length} ${dd.length===1?"lançamento":"lançamentos"}</small></span><span>${brl.format(dd.reduce((s,x)=>s+val(x),0))}</span></div>`}
     if(t.tipo==="t"){
-      html+=`<div class="row st-tr"><span class="t"><b>${esc(t.de)} → ${esc(t.para)}</b><small>${esc(["Transferência",t.obs].filter(Boolean).join(" · "))}</small></span><span class="val">${brl.format(+t.valor||0)}</span><span class="acts"><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;continue}
+      html+=`<div class="row st-tr${hid}"><span class="t"><b>${esc(t.de)} → ${esc(t.para)}</b><small>${esc(["Transferência",t.obs].filter(Boolean).join(" · "))}</small></span><span class="val">${brl.format(+t.valor||0)}</span><span class="acts"><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;continue}
     const v=val(t),meta=[t.obs,t.cat,t.classe,t.cartao?"CARDCHIP":t.conta,t.recId?"conta fixa":"",t.prev?`previsão · gasto ${brl.format(+t.gasto||0)} de ${brl.format(+t.plan||0)}`:"",t.semPrev?"não abate previsão":""].filter(Boolean).map(x=>x==="CARDCHIP"?cardChip(t.cartao)+esc(`${t.parcela?" "+t.parcela:""}${t.status==="pago"&&t.conta?" · pago com "+t.conta:""}`):esc(x)).join(" · ");
-    html+=`<div class="row ${t.prev?"st-prev":(t.status==="pendente"?"st-pend":"st-ok")}"><span class="t"><b>${esc(t.desc||t.cat)}</b><small>${meta}</small></span><span class="val ${v>=0?"in":"out"}">${v>=0?"+":"−"} ${brl.format(Math.abs(v))}</span><span class="acts"><button class="pill ${t.prev?"pv":(t.status==="pendente"?"no":"ok")}" data-st="${esc(t.id)}" title="Tocar para alternar entre pago e pendente">${t.prev?"Previsto":(t.status==="pendente"?"Pendente":(t.tipo==="r"?"Recebido":"Pago"))}</button><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;
+    html+=`<div class="row ${t.prev?"st-prev":(t.status==="pendente"?"st-pend":"st-ok")}${hid}"><span class="t"><b>${esc(t.desc||t.cat)}</b><small>${meta}</small></span><span class="val ${v>=0?"in":"out"}">${v>=0?"+":"−"} ${brl.format(Math.abs(v))}</span><span class="acts"><button class="pill ${t.prev?"pv":(t.status==="pendente"?"no":"ok")}" data-st="${esc(t.id)}" title="Tocar para alternar entre pago e pendente">${t.prev?"Previsto":(t.status==="pendente"?"Pendente":(t.tipo==="r"?"Recebido":"Pago"))}</button><button class="mini" data-edit="${esc(t.id)}" aria-label="Editar">✎</button><button class="mini" data-del="${esc(t.id)}" aria-label="Excluir">✕</button></span></div>`;
   }
   if(a.length>600)html+=`<div class="empty">Mostrando os 600 mais recentes. Use a busca para achar os outros.</div>`;
   $("list").innerHTML=html;
 }
 
-/* accounts, boxes, recurring */
+/* lançamentos: cada data começa recolhida; toque na data para abrir, ou expanda tudo */let diasAll=(()=>{try{return localStorage.getItem("financas-dias")==="1"}catch(err){return false}})();const diasOpen=new Set();const togDia=h=>{const d=h.dataset.day;if(diasAll){diasAll=false;try{localStorage.setItem("financas-dias","0")}catch(err){}diasOpen.clear();document.querySelectorAll("#list [data-day]").forEach(x=>{if(x.dataset.day!==d)diasOpen.add(x.dataset.day)})}else if(diasOpen.has(d))diasOpen.delete(d);else diasOpen.add(d);renderList()};$("list").addEventListener("click",e=>{const h=e.target.closest("[data-day]");if(h)togDia(h)});$("list").addEventListener("keydown",e=>{const h=e.target.closest("[data-day]");if(h&&(e.key==="Enter"||e.key===" ")){e.preventDefault();togDia(h)}});$("dexp").onclick=()=>{diasAll=!diasAll;diasOpen.clear();try{localStorage.setItem("financas-dias",diasAll?"1":"0")}catch(err){}renderList()};/* accounts, boxes, recurring */
 function renderContas(){
   const k=curK(),until=balUntil(),end=monthEnd(k);
   const cs=cfg.contas||[];
