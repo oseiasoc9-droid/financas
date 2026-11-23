@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minhas Finanças · Empresa</title>
+<meta name="theme-color" content="#0a2540"><script>try{if(localStorage.getItem("financas-tema")==="claro")document.documentElement.dataset.theme="light"}catch(e){}</script>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Empresa: o mesmo chão azul do app pessoal, lido como um demonstrativo. Destaques só em etiquetas. */
+:root{color-scheme:dark;--bg:#0a2540;--panel:#0f3054;--line:#1f4670;--ink:#fff;--mute:#a9c1da;--sky:#8fd3ff;--pink:#ff5c8a;--amber:#ffd38f;--ok:#6fe3a8}
+[data-theme=light]{color-scheme:light;--bg:#f3f6fa;--panel:#fff;--line:#d5dfeb;--ink:#0d2238;--mute:#5a6f86;--sky:#0a6fc2;--pink:#d6336c;--amber:#9a6200;--ok:#1b8350}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(4vw,16px)}
+header{border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-block:12px}
+.brand{font-weight:700;font-size:19px;margin-right:auto;display:flex;align-items:center;gap:8px}
+.brand small{font-weight:600;font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav a{color:var(--mute);text-decoration:none;padding:8px 10px;border-radius:8px;font-weight:600;font-size:15px}
+nav a[aria-current=page]{color:var(--ink);background:var(--panel)}
+nav a.out{color:var(--sky)}
+.month{display:flex;align-items:center;gap:6px;font-weight:600}
+.month span{min-width:150px;text-align:center}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600}
+.btn.pri{background:var(--sky);color:#06213b;border-color:var(--sky)}
+[data-theme=light] .btn.pri{color:#fff}
+.btn.sm{min-height:34px;padding:0 12px;font-size:14px}
+.btn.ico{width:44px;padding:0}
+.btn.warn{color:var(--pink)}
+.tbtn{background:none;border:0;cursor:pointer;font-size:16px}
+main{padding-block:22px 80px}
+h1{font-weight:300;font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0 0 6px}
+h2{font-size:17px;margin:0 0 4px}
+h3{font-size:15px;margin:16px 0 6px}
+.sub,.hint{color:var(--mute)}
+.hint{font-size:14px;margin:0 0 12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid2>.panel{margin-bottom:0}
+.grid2{margin-bottom:18px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}.month span{min-width:120px}}
+@media (max-width:700px){header{position:static}nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}nav a{white-space:nowrap}.month{margin-right:auto}}
+.figs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0}
+@media (max-width:980px){.figs{grid-template-columns:repeat(2,1fr)}}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.fig small{display:block;color:var(--mute);font-size:13px;font-weight:600}
+.fig b{display:block;font-weight:300;font-size:clamp(22px,2.4vw,30px);line-height:1.2;margin:4px 0 2px;white-space:nowrap}
+.fig em{font-style:normal;color:var(--mute);font-size:13px}
+.in{color:var(--sky)}.out{color:var(--pink)}.okc{color:var(--ok)}.amb{color:var(--amber)}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;white-space:nowrap;margin-left:8px;vertical-align:2px;line-height:1.6}
+.badge.ok{background:rgba(111,227,168,.14);color:var(--ok)}
+.badge.pend{background:rgba(255,211,143,.15);color:var(--amber)}
+.badge.over{background:rgba(255,92,138,.16);color:var(--pink)}
+.badge.info{background:rgba(143,211,255,.14);color:var(--sky)}
+.badge.mute{background:rgba(169,193,218,.14);color:var(--mute)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:7px 12px;cursor:pointer;font-weight:600;font-size:14px;color:var(--mute)}
+.seg button[aria-pressed=true]{background:var(--panel);color:var(--ink)}
+.filt{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 0}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mute);font-size:13px;font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tscroll{overflow-x:auto}
+.dre td{padding:7px 6px}
+.dre tr.tot td{font-weight:700;border-bottom:1px solid var(--line);padding-top:10px}
+.dre tr.sub td:first-child{padding-left:18px;color:var(--mute)}
+.dre tr.res td{font-weight:700;font-size:17px}
+.rowc{cursor:pointer}.rowc:hover td{background:rgba(143,211,255,.05)}
+.empty{color:var(--mute);font-size:14px;padding:6px 0}
+.big{font-weight:300;font-size:30px;line-height:1.2}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv span small{display:block;color:var(--mute);font-size:13px}
+.kv b{white-space:nowrap;font-variant-numeric:tabular-nums}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(3,14,28,.6);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;z-index:20;overflow:auto}
+.ov[hidden]{display:none}
+.dlg{background:var(--bg);border:1px solid var(--line);border-radius:16px;width:min(640px,100%);padding:20px}
+.dlg h2{font-size:20px;margin-bottom:10px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.fgrid .full{grid-column:1/-1}
+@media (max-width:560px){.fgrid{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--mute)}
+label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-weight:500;font-size:15px}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 10px;color:var(--ink);font-weight:500;font-size:15px;width:100%}
+label.chk input{width:auto}
+textarea{min-height:90px;resize:vertical}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px;font-size:15px}
+.fa{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.fa .sp{margin-right:auto}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#06213b;border:1px solid var(--line);color:#fff;padding:10px 16px;border-radius:12px;z-index:30;font-size:15px;max-width:92vw}
+.toast[hidden]{display:none}
+.auth{max-width:380px;margin:12vh auto;padding:0 16px}
+.auth[hidden]{display:none}
+/* configurações */
+.ctab td{padding:5px 4px;border-bottom:1px solid var(--line)}
+.ctab input,.ctab select{padding:6px 8px;font-size:14px;min-width:90px}
+.ctab td.x{width:36px}
+.ctab input[data-f=nome]{min-width:190px}.ctab select[data-f=cat],.ctab select[data-f=pag]{min-width:170px}.ctab select[data-f=regime]{min-width:150px}
+.xb{background:none;border:0;color:var(--mute);cursor:pointer;font-size:18px}
+section[hidden]{display:none}
+</style>
+</head>
+<body>
+<header><div class="wrap bar">
+  <div class="brand"><span>Minhas Finanças</span><small>Empresa</small><button type="button" class="tbtn" id="tema" aria-label="Mudar tema">☀️</button></div>
+  <nav><a href="#painel">Painel</a><a href="#lancamentos">Lançamentos</a><a href="#produtos">Produtos</a><a href="#contas">Contas e cartões</a><a href="#impostos">Impostos</a><a href="#config">Configurar</a><a href="./" class="out">Pessoal ↗</a></nav>
+  <div class="month"><button class="btn ico" id="prev" aria-label="Mês anterior">‹</button><span id="mlabel"></span><button class="btn ico" id="next" aria-label="Próximo mês">›</button></div>
+  <button class="btn pri" id="add">+ Lançar</button>
+</div></header>
+
+<div class="auth" id="auth" hidden>
+  <h1>Entrar</h1><p class="sub">Use o mesmo login do Minhas Finanças.</p>
+  <form id="aform"><label>E-mail<input id="aem" type="email" autocomplete="username" required></label><br><label>Senha<input id="apw" type="password" autocomplete="current-password" required></label><p id="aerr" class="hint"></p><button class="btn pri" style="width:100%">Entrar</button></form>
+</div>
+
+<main class="wrap" id="main" hidden>
+<div class="filt" id="cnpjf"></div>
+
+<section id="painel">
+  <h1 id="headline"></h1>
+  <p class="sub" id="subline"></p>
+  <div class="figs" id="figs"></div>
+  <div class="grid2">
+    <div class="panel"><h2>Resultado do mês</h2><p class="hint">Do que foi vendido até o que sobra na empresa. O percentual é sobre o faturamento bruto.</p><div class="tscroll"><table class="dre" id="dre"></table></div></div>
+    <div>
+      <div class="panel"><h2>Impostos e taxas que ficam escondidos</h2><p class="hint" id="hidh"></p><div id="hid"></div></div>
+      <div class="panel"><h2>Tráfego real</h2><p class="hint">O que o gerenciador mostra é só a mídia. Aqui entra o que o cartão realmente cobrou.</p><div id="traf"></div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h2>Próximos vencimentos</h2><p class="hint">Faturas, contas pendentes e DAS nos próximos 30 dias.</p><div id="venc"></div></div>
+    <div class="panel"><h2>Dinheiro agora</h2><p class="hint">Saldo de cada conta e plataforma, pelo que foi lançado.</p><div id="saldos"></div></div>
+  </div>
+  <div class="panel" id="testp" hidden><h2>Testes de produto</h2><p class="hint">Produtos marcados como teste ficam separados aqui para você ver se valeu a pena.</p><div id="tests"></div></div>
+  <div class="panel"><h2 id="anoh">O ano</h2><p class="hint">Mês a mês, pelo regime de competência (vendas e gastos no mês em que aconteceram).</p><div class="tscroll"><table id="ano"></table></div></div>
+</section>
+
+<section id="lancamentos" hidden>
+  <h1>Lançamentos</h1><p class="sub">Tudo o que entrou e saiu no mês. Toque numa linha para editar.</p>
+  <div class="filt"><div class="seg" id="ltipo"></div><button class="btn sm" id="fixbtn" hidden></button></div>
+  <div class="panel" style="margin-top:14px"><div class="tscroll"><table id="ltab"></table></div></div>
+</section>
+
+<section id="produtos" hidden>
+  <h1>Produtos</h1><p class="sub">Quanto cada produto vende e quanto custa em anúncio. Para o anúncio contar no produto, escolha o produto ao lançar a cobrança.</p>
+  <div class="filt"><div class="seg" id="pper"><button data-p="mes" aria-pressed="true">Mês</button><button data-p="ano">Ano até o mês</button></div></div>
+  <div class="panel" style="margin-top:14px"><div class="tscroll"><table id="ptab"></table></div><p class="hint" style="margin-top:12px">ROAS no gerenciador = faturamento ÷ mídia. ROAS real = faturamento ÷ tudo o que o anúncio custou (mídia + impostos + IOF). Lucro do produto = faturamento − taxas − DAS − anúncio.</p></div>
+</section>
+
+<section id="contas" hidden>
+  <h1>Contas e cartões</h1><p class="sub">Saldo de cada conta pelo que foi lançado. Se não bater com o banco ou a plataforma, use “Ajustar saldo”.</p>
+  <div class="panel"><h2>Contas e plataformas</h2><div class="tscroll"><table id="ctab"></table></div></div>
+  <div class="panel"><h2>Faturas dos cartões</h2><p class="hint">Cada compra cai na fatura certa pelo dia em que o cartão fecha. Pagar a fatura tira o dinheiro da conta escolhida no cartão.</p><div id="fats"></div></div>
+</section>
+
+<section id="impostos" hidden>
+  <h1>Impostos</h1><p class="sub">O DAS de cada mês é calculado sobre o faturamento bruto e vence no dia 20 do mês seguinte. Separe esse dinheiro assim que vender.</p>
+  <div id="imp"></div>
+</section>
+
+<section id="config" hidden>
+  <h1>Configurar</h1><p class="sub">Empresas, produtos, plataformas, contas de anúncio, contas, cartões e despesas fixas. Tudo salva sozinho.</p>
+  <div id="cfgv"></div>
+  <div class="panel"><h2>Copiar ou restaurar</h2><p class="hint">Baixa todos os dados da empresa num arquivo, para guardar uma cópia.</p><button class="btn sm" id="exp">Baixar cópia (JSON)</button></div>
+</section>
+</main>
+
+<div class="ov" id="ov" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgt">
+  <h2 id="dlgt">Lançar</h2>
+  <div class="seg" id="ftipo"></div>
+  <div id="fbody"></div>
+  <div class="box" id="fprev" hidden></div>
+  <p class="hint" id="ferr" style="color:var(--pink);margin-top:10px"></p>
+  <div class="fa"><button class="btn warn sp" id="fdel" hidden>Excluir</button><button class="btn" id="fcancel">Cancelar</button><button class="btn pri" id="fsave">Salvar</button></div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+<script>
+"use strict";
+const SB_URL="https://mahmzfnfpswvmteuswnl.supabase.co",SB_KEY="sb_publishable_X4muxJjkongXJx3MKupJGA_jOlnRPup";
+const DEMO=/[?&]demo/.test(location.search);
+/* ---------- utilidades ---------- */
+const $=id=>document.getElementById(id);
+const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const M=v=>brl.format(Math.abs(v)<0.005?0:v);
+const pc=(v,d=1)=>isFinite(v)?(v*100).toLocaleString("pt-BR",{maximumFractionDigits:d,minimumFractionDigits:0})+"%":"–";
+const xx=v=>isFinite(v)&&v>0?v.toLocaleString("pt-BR",{maximumFractionDigits:2,minimumFractionDigits:2})+"x":"–";
+const r2=v=>Math.round((+v||0)*100)/100;
+const pad=n=>String(n).padStart(2,"0");
+const ym=(y,m)=>`${y}-${pad(m+1)}`;
+const addM=(k,n)=>{let y=+k.slice(0,4),m=+k.slice(5,7)-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;return ym(y,m)};
+const today=new Date(),todayS=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`,nowK=todayS.slice(0,7);
+const dayIn=(k,d)=>{const last=new Date(+k.slice(0,4),+k.slice(5,7),0).getDate();return `${k}-${pad(Math.min(Math.max(1,+d||1),last))}`};
+const addD=(d,n)=>{const x=new Date(d+"T12:00");x.setDate(x.getDate()+n);return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`};
+const dDiff=d=>Math.round((Date.parse(d+"T12:00")-Date.parse(todayS+"T12:00"))/864e5);
+const kName=(k,o)=>{const t=new Date(+k.slice(0,4),+k.slice(5,7)-1,1).toLocaleDateString("pt-BR",o||{month:"long",year:"numeric"}).replace(" De "," de ").replace(".","");return t};
+const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+const dShort=d=>`${d.slice(8,10)}/${d.slice(5,7)}`;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const parseMoney=s=>{s=String(s??"").replace(/[R$\s]/g,"");if(!s)return NaN;if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");return +s};
+const fmtIn=v=>v===""||v==null||isNaN(+v)?"":(+v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const opt=(v,l,sel)=>`<option value="${esc(v)}"${String(v)===String(sel)?" selected":""}>${esc(l)}</option>`;
+let toastT;function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3800)}
+
+/* ---------- categorias: cada uma cai numa linha do resultado ---------- */
+const CATS=[
+ ["Taxas de saque e antecipação","venda"],
+ ["Tráfego: outros canais","trafego"],
+ ["Ferramentas e softwares","estrutura"],["Domínios e hospedagem","estrutura"],["Contabilidade","estrutura"],["Endereço e custos do CNPJ","estrutura"],["Design e produção","estrutura"],["Cursos e mentorias","estrutura"],["Espaço físico","estrutura"],["Equipamentos","estrutura"],["Tarifas bancárias","estrutura"],["Multas e juros","estrutura"],["Outros","estrutura"],
+ ["Pró-labore","socios"],["INSS do pró-labore","socios"],["Distribuição de lucros","distrib"],
+ ["DAS (pagamento)","das"]];
+const CATG=Object.fromEntries(CATS);
+const GNAME={venda:"custos da venda",trafego:"tráfego",estrutura:"estrutura fixa",socios:"sócios (pró-labore e INSS)",distrib:"distribuição de lucros",das:"impostos pagos (já previstos no resultado, não soma de novo)"};
+const IOF_INT=3.5;
+/* tabelas do Simples Nacional (LC 123/2006): limite da faixa, alíquota nominal, parcela a deduzir */
+const SIMPLES={III:[[180000,.06,0],[360000,.112,9360],[720000,.135,17640],[1800000,.16,35640],[3600000,.21,125640],[4800000,.33,648000]],V:[[180000,.155,0],[360000,.18,4500],[720000,.195,9900],[1800000,.205,17100],[3600000,.23,62100],[4800000,.305,540000]]};
+
+/* ---------- configuração inicial ---------- */
+const DEF_CFG={
+ cnpjs:[{id:"ft",nome:"FarmaTécnica",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0},{id:"tm",nome:"Tainá (MEI)",regime:"mei",anexo:"",aliq:"",rbtIni:0,mei:86}],
+ plats:[{nome:"Greenn",pct:4.99,fixo:1,conta:"Greenn"},{nome:"Hotmart",pct:9.9,fixo:1,conta:"Hotmart"},{nome:"Kiwify",pct:8.99,fixo:2.49,conta:"Kiwify"}],
+ prods:[
+  {id:"p1",nome:"Manual de Fórmulas FarmaTécnica",cnpj:"ft",papel:"principal",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p2",nome:"Documentos Operacionais FarmaTécnica",cnpj:"ft",papel:"principal",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p3",nome:"Dominando os Cálculos na Manipulação Magistral",cnpj:"ft",papel:"bump e direto",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p4",nome:"Guia de Preparação para Fiscalização Sanitária",cnpj:"ft",papel:"bump e direto",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p5",nome:"Guia de Excipientes para Cápsulas",cnpj:"ft",papel:"bump e direto",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p6",nome:"RDC 1000 Descomplicada",cnpj:"ft",papel:"bump e direto",status:"ativo",plat:"Greenn",preco:""},
+  {id:"p7",nome:"Flex (Tainá)",cnpj:"tm",papel:"principal",status:"pausado",plat:"Hotmart",preco:""},
+  {id:"p8",nome:"Cardápio de Páscoa",cnpj:"ft",papel:"principal",status:"teste",plat:"Kiwify",preco:""}],
+ ads:[
+  {id:"a1",nome:"Meta · conta 1 (R$)",cnpj:"ft",moeda:"BRL",imp:12.15,iof:0},
+  {id:"a2",nome:"Meta · conta 2 (R$)",cnpj:"ft",moeda:"BRL",imp:12.15,iof:0},
+  {id:"a3",nome:"Meta · conta 3 (US$)",cnpj:"ft",moeda:"USD",imp:0,iof:3.5},
+  {id:"a4",nome:"Meta · conta 4 (US$)",cnpj:"ft",moeda:"USD",imp:0,iof:3.5},
+  {id:"a5",nome:"Meta · Tainá (R$)",cnpj:"tm",moeda:"BRL",imp:12.15,iof:0}],
+ contas:[
+  {nome:"Nubank PJ",tipo:"banco",cnpj:"ft",ini:0},
+  {nome:"Greenn",tipo:"plataforma",cnpj:"ft",ini:0},
+  {nome:"Hotmart",tipo:"plataforma",cnpj:"tm",ini:0},
+  {nome:"Kiwify",tipo:"plataforma",cnpj:"ft",ini:0},
+  {nome:"MP Tainá",tipo:"banco",cnpj:"tm",ini:0}],
+ cards:[{nome:"Nubank PJ",fecha:1,vence:8,conta:"Nubank PJ"},{nome:"Cora",fecha:5,vence:10,conta:"Nubank PJ"}],
+ fixas:[
+  {id:"f1",nome:"Contabilidade",cat:"Contabilidade",valor:230,dia:13,pag:"conta:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f2",nome:"Meres (endereço digital)",cat:"Endereço e custos do CNPJ",valor:59,dia:1,pag:"card:Cora",cnpj:"ft",intl:false,ativo:true},
+  {id:"f3",nome:"Spedy (notas fiscais)",cat:"Ferramentas e softwares",valor:83.08,dia:1,pag:"card:Cora",cnpj:"ft",intl:false,ativo:true},
+  {id:"f4",nome:"UTMify",cat:"Ferramentas e softwares",valor:29.9,dia:1,pag:"card:Cora",cnpj:"ft",intl:false,ativo:true},
+  {id:"f5",nome:"Hotmart Pages",cat:"Ferramentas e softwares",valor:67,dia:1,pag:"card:Cora",cnpj:"ft",intl:false,ativo:true},
+  {id:"f6",nome:"ElevenLabs",cat:"Ferramentas e softwares",valor:30,dia:1,pag:"card:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f7",nome:"Placeit",cat:"Ferramentas e softwares",valor:19.95,dia:1,pag:"card:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f8",nome:"Canva",cat:"Ferramentas e softwares",valor:35,dia:1,pag:"card:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f9",nome:"ChatGPT",cat:"Ferramentas e softwares",valor:111.25,dia:21,pag:"card:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f10",nome:"Claude",cat:"Ferramentas e softwares",valor:114,dia:3,pag:"card:Nubank PJ",cnpj:"ft",intl:true,ativo:true},
+  {id:"f11",nome:"INSS do pró-labore",cat:"INSS do pró-labore",valor:166.98,dia:20,pag:"conta:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f12",nome:"Pró-labore Oseias",cat:"Pró-labore",valor:6000,dia:5,pag:"conta:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
+  {id:"f13",nome:"DAS MEI Tainá",cat:"DAS (pagamento)",valor:86,dia:20,pag:"conta:MP Tainá",cnpj:"tm",intl:false,ativo:true}]
+};
+
+/* ---------- dados ---------- */
+let sb=null,user=null,cfg=clone(DEF_CFG),cfgRev=0,months={},cur={y:today.getFullYear(),m:today.getMonth()},fc="",ltipo="",pper="mes";
+const curK=()=>ym(cur.y,cur.m);
+const store={
+ async all(){if(DEMO){const out=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("demo-emp-")){const d=JSON.parse(localStorage.getItem(k));out.push({key:k.slice(5),body:d.body,rev:d.rev})}}return out}
+  const q=await sb.from("docs").select("key,body,rev").eq("user_id",user.id).like("key","emp-%");if(q.error)throw q.error;return q.data||[]},
+ async get(key){if(DEMO){return JSON.parse(localStorage.getItem("demo-"+key)||"null")}
+  const q=await sb.from("docs").select("body,rev").eq("user_id",user.id).eq("key",key).maybeSingle();if(q.error)throw q.error;return q.data},
+ async put(key,body,rev){const now=new Date().toISOString();
+  if(DEMO){const d=JSON.parse(localStorage.getItem("demo-"+key)||"null");if((d?+d.rev:0)!==rev)return 0;localStorage.setItem("demo-"+key,JSON.stringify({body,rev:rev+1}));return rev+1}
+  if(rev>0){const u=await sb.from("docs").update({body,rev:rev+1,updated_at:now}).eq("user_id",user.id).eq("key",key).eq("rev",rev).select("key");if(u.error)throw u.error;return u.data&&u.data.length?rev+1:0}
+  const ins=await sb.from("docs").insert({user_id:user.id,key,body,rev:1,updated_at:now});if(ins.error){if(ins.error.code==="23505")return 0;throw ins.error}return 1}
+};
+/* grava lendo antes: se outra pessoa salvou no meio, relê e aplica de novo */
+async function mutate(key,fn){for(let i=0;i<8;i++){const d=await store.get(key);const rev=d?+d.rev||0:0;const body=fn(d&&d.body?clone(d.body):null);const nr=await store.put(key,body,rev);if(nr)return {body,rev:nr};await sleep(150+Math.random()*300)}throw new Error("Não consegui salvar. Tente de novo.")}
+async function saveCfg(){try{const r=await mutate("emp-cfg",()=>({kind:"emp-cfg",...cfg}));cfgRev=r.rev}catch(e){toast("Erro ao salvar: "+e.message)}}
+async function saveTxs(list,delIds){const by={};for(const t of list){const k=t.data.slice(0,7);(by[k]=by[k]||{up:[],del:[]}).up.push(t)}
+ for(const [id,k] of (delIds||[])){(by[k]=by[k]||{up:[],del:[]}).del.push(id)}
+ for(const [k,o] of Object.entries(by)){const ids=new Set(o.up.map(t=>t.id).concat(o.del));const r=await mutate("emp-m-"+k,b=>({kind:"emp-month",txs:((b&&b.txs)||[]).filter(t=>!ids.has(t.id)).concat(o.up)}));months[k]=r.body.txs}
+ setFirstK();render()}
+function setFirstK(){const ks=Object.keys(months).filter(k=>months[k].length).sort();firstK=ks[0]||nowK}
+const all=()=>Object.values(months).flat();
+const inMonth=k=>months[k]||[];
+
+/* ---------- consultas à configuração ---------- */
+const cnpjOf=id=>cfg.cnpjs.find(c=>c.id===id);
+const prodOf=id=>cfg.prods.find(p=>p.id===id);
+const platOf=n=>cfg.plats.find(p=>p.nome===n);
+const adOf=id=>cfg.ads.find(a=>a.id===id);
+const cardOf=n=>cfg.cards.find(c=>c.nome===n);
+const contaOf=n=>cfg.contas.find(c=>c.nome===n);
+const pagCard=t=>t.pag&&t.pag.startsWith("card:")?t.pag.slice(5):"";
+const pagConta=t=>t.pag&&t.pag.startsWith("conta:")?t.pag.slice(6):"";
+function txCnpj(t){if(t.k==="venda"){const p=prodOf(t.prod);return p?p.cnpj:t.cnpj}if(t.k==="ads"){const a=adOf(t.conta);return t.cnpj||(a?a.cnpj:"")}if(t.k==="transf"){const c=contaOf(t.de);return c?c.cnpj:""}if(t.k==="pagfat"||t.k==="ajuste"||t.k==="rec"){const c=contaOf(t.k==="pagfat"?pagConta(t):t.conta);return t.cnpj||(c?c.cnpj:"")}return t.cnpj||""}
+const pass=t=>!fc||txCnpj(t)===fc;
+function adsSplit(t){const a=adOf(t.conta)||{imp:0,iof:0},c=+t.cobrado||0,imp=r2(c*(+a.imp||0)/100),iof=r2(c*(+a.iof||0)/100);return {midia:r2(c-imp),imp,iof,total:r2(c+iof)}}
+const despIof=t=>t.intl?r2((+t.valor||0)*IOF_INT/100):0;
+const despTot=t=>r2((+t.valor||0)+despIof(t));
+const vendaLiq=t=>r2((+t.bruto||0)-(+t.taxa||0)-(+t.reemb||0));
+function platTaxa(plat,bruto,qtd){const p=platOf(plat);if(!p)return 0;return r2((+bruto||0)*(+p.pct||0)/100+(+p.fixo||0)*(+qtd||0))}
+/* fatura: a compra cai na fatura que fecha depois dela */
+function closeOf(card,due){const c=cardOf(card);if(!c)return due;const k=due.slice(0,7);return +c.vence>+c.fecha?dayIn(k,c.fecha):dayIn(addM(k,-1),c.fecha)}
+function dueOf(card,d){const c=cardOf(card);if(!c)return d;let k=addM(d.slice(0,7),-1);for(let i=0;i<4;i++,k=addM(k,1)){const due=dayIn(k,c.vence);if(d<closeOf(card,due))return due}return dayIn(addM(d.slice(0,7),2),c.vence)}
+const txVal=t=>t.k==="ads"?adsSplit(t).total:t.k==="desp"?despTot(t):t.k==="venda"?vendaLiq(t):(+t.valor||0);
+
+/* ---------- DAS ---------- */
+let firstK=null;
+function baseMonth(k,cid){return inMonth(k).filter(t=>t.k==="venda"&&txCnpj(t)===cid).reduce((a,t)=>a+(+t.bruto||0)-(+t.reemb||0),0)}
+function rbt12(k,c){let s=0;for(let i=1;i<=12;i++){const kk=addM(k,-i);s+=(firstK&&kk>=firstK)?baseMonth(kk,c.id):(+c.rbtIni||0)/12}return r2(s)}
+function aliqEf(k,c){if(c.regime==="mei")return 0;if(c.aliq!==""&&c.aliq!=null&&!isNaN(parseMoney(c.aliq)))return parseMoney(c.aliq)/100;const tb=SIMPLES[c.anexo]||SIMPLES.III,rbt=rbt12(k,c);if(rbt<=0)return tb[0][1];const f=tb.find(x=>rbt<=x[0])||tb[tb.length-1];return Math.max(0,(rbt*f[1]-f[2])/rbt)}
+function dasMonth(k,c){if(c.regime==="mei")return +c.mei||0;return r2(baseMonth(k,c.id)*aliqEf(k,c))}
+
+/* ---------- resultado do mês ---------- */
+function calc(k){const T=inMonth(k).filter(pass);const R={fat:0,qtd:0,reemb:0,taxa:0,saque:0,das:0,midia:0,aimp:0,aiof:0,traf2:0,estr:{},estrT:0,diof:0,prol:0,inss:0,distr:0,outras:0,dasPago:0};
+ for(const t of T){if(t.k==="venda"){R.fat+=+t.bruto||0;R.qtd+=+t.qtd||0;R.reemb+=+t.reemb||0;R.taxa+=+t.taxa||0}
+  else if(t.k==="ads"){const s=adsSplit(t);R.midia+=s.midia;R.aimp+=s.imp;R.aiof+=s.iof}
+  else if(t.k==="transf"){R.saque+=+t.taxa||0}
+  else if(t.k==="rec"){R.outras+=+t.valor||0}
+  else if(t.k==="desp"){const g=CATG[t.cat]||"estrutura",v=despTot(t);R.diof+=despIof(t);
+   if(g==="venda")R.saque+=v;else if(g==="trafego")R.traf2+=v;else if(g==="socios"){if(t.cat==="INSS do pró-labore")R.inss+=v;else R.prol+=v}else if(g==="distrib")R.distr+=v;else if(g==="das")R.dasPago+=v;else{R.estr[t.cat]=(R.estr[t.cat]||0)+v;R.estrT+=v}}}
+ for(const c of cfg.cnpjs){if(fc&&c.id!==fc)continue;if(c.regime==="mei"&&!(firstK&&k>=firstK))continue;R.das+=dasMonth(k,c)}
+ R.recLiq=R.fat-R.reemb-R.taxa-R.saque-R.das;R.adsTot=R.midia+R.aimp+R.aiof;R.trafT=R.adsTot+R.traf2;R.margem=R.recLiq-R.trafT;R.lucroOp=R.margem-R.estrT;R.res=R.lucroOp+R.outras-R.prol-R.inss;
+ R.hidden=R.aimp+R.aiof+R.diof+R.taxa+R.saque+R.das+R.inss;
+ R.be=breakeven(R);return R}
+function breakeven(R){const fator=R.midia>0?R.adsTot/R.midia:1.1383;const tx=R.fat>0?(R.taxa+R.reemb)/R.fat:0.06;const das=R.fat>0?R.das/R.fat:0.06;const m=1-tx-das;return m>0?fator/m:NaN}
+
+/* ---------- saldos ---------- */
+function saldos(){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;const add=(n,v)=>{if(n in S)S[n]+=v};
+ for(const t of all()){if(t.k==="venda"){const p=platOf(t.plat);if(p)add(p.conta,vendaLiq(t))}
+  else if((t.k==="ads"||t.k==="desp")&&pagConta(t)&&t.pago!==false)add(pagConta(t),-txVal(t));
+  else if(t.k==="pagfat")add(pagConta(t),-(+t.valor||0));
+  else if(t.k==="transf"){add(t.de,-((+t.valor||0)+(+t.taxa||0)));add(t.para,+t.valor||0)}
+  else if(t.k==="rec"||t.k==="ajuste")add(t.conta,+t.valor||0)}
+ for(const n in S)S[n]=r2(S[n]);return S}
+function faturas(){const F={};for(const t of all()){const c=pagCard(t);if(!c||(t.k!=="ads"&&t.k!=="desp"))continue;if(fc&&txCnpj(t)!==fc)continue;const due=dueOf(c,t.data),key=c+"|"+due;const f=F[key]=F[key]||{card:c,due,close:closeOf(c,due),total:0,itens:[],pago:0};f.total+=txVal(t);f.itens.push(t)}
+ for(const t of all())if(t.k==="pagfat"){const f=F[t.card+"|"+t.due];if(f)f.pago+=+t.valor||0}
+ return Object.values(F).map(f=>({...f,total:r2(f.total),pago:r2(f.pago),quit:f.pago>=f.total-0.01})).sort((a,b)=>a.due.localeCompare(b.due))}
+function vencList(until){const L=[];for(const f of faturas())if(!f.quit&&f.due<=until)L.push({data:f.due,nome:`Fatura ${f.card}`,valor:r2(f.total-f.pago),det:`fecha ${dShort(f.close)} · ${f.itens.length} ${f.itens.length>1?"itens":"item"}`,fat:f});
+ for(const t of all())if((t.k==="desp"||t.k==="ads")&&pagConta(t)&&t.pago===false&&t.data<=until&&pass(t))L.push({data:t.data,nome:t.k==="ads"?"Anúncio":t.desc,valor:txVal(t),det:pagConta(t),tx:t});
+ for(const c of cfg.cnpjs){if(fc&&c.id!==fc)continue;for(let i=-3;i<=0;i++){const k=addM(nowK,i),due=dayIn(addM(k,1),20);if(due>until||!firstK||k<firstK)continue;const v=dasMonth(k,c);const pago=inMonth(addM(k,1)).filter(t=>t.k==="desp"&&t.cat==="DAS (pagamento)"&&t.cnpj===c.id).reduce((a,t)=>a+despTot(t),0);if(v>0.004&&pago<v-0.01)L.push({data:due,nome:`DAS ${c.nome}`,valor:r2(v-pago),det:`referente a ${kName(k,{month:"long"})}`})}}
+ return L.sort((a,b)=>a.data.localeCompare(b.data))}
+function vtag(d){const n=dDiff(d);return n<0?`<span class="badge over">atrasado ${-n}d</span>`:n===0?`<span class="badge over">vence hoje</span>`:n<=3?`<span class="badge pend">em ${n} ${n>1?"dias":"dia"}</span>`:`<span class="badge info">em ${n} dias</span>`}
+
+/* ---------- render ---------- */
+function render(){$("mlabel").textContent=cap(kName(curK()));renderCnpjF();const h=(location.hash||"#painel").slice(1);
+ for(const s of document.querySelectorAll("main section"))s.hidden=s.id!==h;for(const a of document.querySelectorAll("nav a"))a.toggleAttribute("aria-current",a.getAttribute("href")==="#"+h),a.getAttribute("href")==="#"+h&&a.setAttribute("aria-current","page");
+ ({painel:renderPainel,lancamentos:renderList,produtos:renderProds,contas:renderContas,impostos:renderImp,config:renderCfg}[h]||renderPainel)()}
+function renderCnpjF(){$("cnpjf").innerHTML=`<div class="seg" role="group" aria-label="Empresa">${[["","Todas"]].concat(cfg.cnpjs.map(c=>[c.id,c.nome])).map(([v,l])=>`<button data-c="${esc(v)}" aria-pressed="${fc===v}">${esc(l)}</button>`).join("")}</div>`}
+$("cnpjf").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;fc=b.dataset.c;render()});
+
+function renderPainel(){const k=curK(),R=calc(k),nome=fc?cnpjOf(fc).nome:"Empresa";
+ $("headline").innerHTML=R.fat||R.trafT||R.estrT?`${esc(nome)}: ${R.res>=0?"sobraram":"faltaram"} <b class="${R.res>=0?"okc":"out"}" style="font-weight:500">${M(Math.abs(R.res))}</b> em ${kName(k,{month:"long"})}`:`${esc(nome)} · ${cap(kName(k))}`;
+ $("subline").textContent=R.fat?`De cada R$ 100 vendidos, ${M(R.hidden/R.fat*100)} foram para impostos e taxas e ${M(R.trafT/R.fat*100)} para o tráfego.`:"Nenhuma venda lançada neste mês ainda. Use “+ Lançar”.";
+ $("figs").innerHTML=[["Faturamento bruto",M(R.fat),`${R.qtd} ${R.qtd===1?"venda":"vendas"}`,"in"],["Margem de contribuição",M(R.margem),R.fat?pc(R.margem/R.fat)+" do faturamento":"vendas − custos da venda − tráfego",R.margem>=0?"okc":"out"],["Lucro operacional",M(R.lucroOp),"depois da estrutura fixa",R.lucroOp>=0?"okc":"out"],["Impostos e taxas",M(R.hidden),R.fat?pc(R.hidden/R.fat)+" do faturamento":"tudo somado","amb"],["ROAS mínimo",xx(R.be),"no gerenciador, para empatar",""]].map(([l,v,e,c])=>`<div class="fig"><small>${l}</small><b class="${c}">${v}</b><em>${e}</em></div>`).join("");
+ const f=v=>R.fat>0?`<td class="n hint" style="margin:0">${pc(v/R.fat)}</td>`:`<td></td>`;
+ const L=(l,v,cls="sub",neg=true)=>`<tr class="${cls}"><td>${l}</td><td class="n">${v?(neg&&v>0?"− ":"")+M(v):"–"}</td>${f(v)}</tr>`;
+ const T=(l,v,cls="tot")=>`<tr class="${cls}"><td>${l}</td><td class="n ${v>=0?"":"out"}">${M(v)}</td>${f(v)}</tr>`;
+ $("dre").innerHTML=`<tr class="tot"><td>Faturamento bruto</td><td class="n in">${M(R.fat)}</td>${f(R.fat)}</tr>`+L("Reembolsos e chargebacks",R.reemb)+L("Taxas das plataformas",R.taxa)+L("Taxas de saque e antecipação",R.saque)+L("DAS sobre o faturamento (previsto)",R.das)+T("Receita líquida",R.recLiq)+L("Anúncios: mídia",R.midia)+L("Anúncios: impostos embutidos",R.aimp)+L("Anúncios: IOF",R.aiof)+(R.traf2?L("Outros canais de tráfego",R.traf2):"")+T("Margem de contribuição",R.margem)+Object.entries(R.estr).sort((a,b)=>b[1]-a[1]).map(([c,v])=>L(esc(c),v)).join("")+T("Lucro operacional",R.lucroOp)+(R.outras?`<tr class="sub"><td>Outras entradas (rendimentos etc.)</td><td class="n in">+ ${M(R.outras)}</td>${f(R.outras)}</tr>`:"")+L("Pró-labore",R.prol)+L("INSS do pró-labore",R.inss)+T("Sobra na empresa",R.res,"tot res")+(R.distr?`<tr class="sub"><td>Distribuição de lucros já feita</td><td class="n">${M(R.distr)}</td><td></td></tr>`:"");
+ const hid=[["Impostos da Meta embutidos na cobrança","PIS/Cofins e ISS das contas em real",R.aimp],["IOF","anúncios em dólar e compras internacionais",R.aiof+R.diof],["Taxas das plataformas","% + valor fixo por venda",R.taxa],["Taxas de saque e antecipação","",R.saque],["DAS","previsto pelo faturamento do mês (MEI: valor fixo)",R.das],["INSS do pró-labore","",R.inss]].filter(x=>x[2]>0.004);
+ $("hidh").textContent=R.fat?`${M(R.hidden)} no mês, ${pc(R.hidden/R.fat)} do faturamento.`:"Aparecem aqui conforme você lança vendas e gastos.";
+ $("hid").innerHTML=hid.length?hid.map(([l,s,v])=>`<div class="kv"><span>${l}${s?`<small>${s}</small>`:""}</span><b>${M(v)}${R.fat?`<span class="badge mute">${pc(v/R.fat)}</span>`:""}</b></div>`).join(""):`<p class="empty">Nada ainda neste mês.</p>`;
+ $("traf").innerHTML=R.adsTot?[["Mídia (o que o gerenciador mostra)",M(R.midia)],["Impostos embutidos",M(R.aimp)],["IOF",M(R.aiof)],["Custo real dos anúncios",`<span class="out">${M(R.adsTot)}</span><span class="badge pend">+${pc(R.midia?R.adsTot/R.midia-1:0)} sobre a mídia</span>`],["ROAS no gerenciador",xx(R.midia?R.fat/R.midia:NaN)],["ROAS real",`${xx(R.adsTot?R.fat/R.adsTot:NaN)}${R.adsTot&&R.fat/R.midia>=R.be?`<span class="badge ok">acima do mínimo</span>`:R.adsTot?`<span class="badge over">abaixo do mínimo</span>`:""}`],["ROAS mínimo para empatar",xx(R.be)]].map(([l,v])=>`<div class="kv"><span>${l}</span><b>${v}</b></div>`).join("")+`<p class="hint" style="margin:10px 0 0">O mínimo considera as taxas da plataforma, o DAS e os impostos do anúncio deste mês. Abaixo dele, cada venda dá prejuízo antes mesmo da estrutura fixa.</p>`:`<p class="empty">Nenhuma cobrança de anúncio lançada neste mês.</p>`;
+ const V=vencList(addD(todayS,30));$("venc").innerHTML=V.length?V.map(x=>`<div class="kv"><span>${dShort(x.data)} · <b style="font-weight:600">${esc(x.nome)}</b>${vtag(x.data)}<small>${esc(x.det||"")}</small></span><b>${M(x.valor)}</b></div>`).join(""):`<p class="empty">Nada vencendo nos próximos 30 dias.</p>`;
+ const S=saldos(),cs=cfg.contas.filter(c=>!fc||c.cnpj===fc);$("saldos").innerHTML=cs.map(c=>`<div class="kv"><span>${esc(c.nome)}<small>${c.tipo==="plataforma"?"plataforma":"banco"} · ${esc((cnpjOf(c.cnpj)||{}).nome||"")}</small></span><b class="${S[c.nome]<0?"out":""}">${M(S[c.nome])}</b></div>`).join("")+`<div class="kv"><span><b>Total</b></span><b>${M(cs.reduce((a,c)=>a+S[c.nome],0))}</b></div>`;
+ renderTests(k);renderAno()}
+function renderTests(k){const tp=cfg.prods.filter(p=>p.status==="teste"&&(!fc||p.cnpj===fc));const rows=tp.map(p=>{const st=prodStats(p.id,[k]);return {p,st}}).filter(x=>x.st.fat||x.st.ads);$("testp").hidden=!rows.length;$("tests").innerHTML=rows.map(({p,st})=>`<div class="kv"><span>${esc(p.nome)}<small>vendeu ${M(st.fat)} · anúncio ${M(st.ads)} · ROAS real ${xx(st.ads?st.fat/st.ads:NaN)}</small></span><b class="${st.lucro>=0?"okc":"out"}">${M(st.lucro)}</b></div>`).join("")}
+function renderAno(){const y=cur.y;$("anoh").textContent=`O ano de ${y}`;let tot={fat:0,recLiq:0,trafT:0,margem:0,estrT:0,lucroOp:0,res:0};const rows=[];for(let i=0;i<12;i++){const k=ym(y,i);if(!(months[k]&&months[k].length)&&k!==curK())continue;const R=calc(k);for(const x in tot)tot[x]+=R[x];rows.push(`<tr class="rowc" data-k="${k}"><td>${cap(kName(k,{month:"long"}))}${k===nowK?`<span class="badge info">agora</span>`:""}</td><td class="n in">${M(R.fat)}</td><td class="n">${M(R.trafT)}</td><td class="n">${M(R.margem)}</td><td class="n">${M(R.estrT)}</td><td class="n ${R.res>=0?"okc":"out"}">${M(R.res)}</td></tr>`)}
+ $("ano").innerHTML=`<tr><th>Mês</th><th class="n">Faturamento</th><th class="n">Tráfego real</th><th class="n">Margem</th><th class="n">Estrutura</th><th class="n">Sobra</th></tr>`+rows.join("")+`<tr class="tot"><td><b>Total</b></td><td class="n in"><b>${M(tot.fat)}</b></td><td class="n"><b>${M(tot.trafT)}</b></td><td class="n"><b>${M(tot.margem)}</b></td><td class="n"><b>${M(tot.estrT)}</b></td><td class="n ${tot.res>=0?"okc":"out"}"><b>${M(tot.res)}</b></td></tr>`}
+$("ano").addEventListener("click",e=>{const r=e.target.closest("[data-k]");if(!r)return;cur={y:+r.dataset.k.slice(0,4),m:+r.dataset.k.slice(5,7)-1};render();scrollTo({top:0,behavior:"smooth"})});
+
+/* ---------- lançamentos ---------- */
+const TIPOS=[["venda","Venda"],["ads","Anúncio"],["desp","Despesa"],["transf","Saque / transferência"],["rec","Outra entrada"]];
+const TNAME={venda:"Venda",ads:"Anúncio",desp:"Despesa",transf:"Saque",rec:"Entrada",pagfat:"Pagou fatura",ajuste:"Ajuste de saldo"};
+function txDesc(t){if(t.k==="venda"){const p=prodOf(t.prod);return `${p?p.nome:"Produto"} · ${t.qtd||1}x · ${t.plat||""}`}if(t.k==="ads"){const a=adOf(t.conta),p=prodOf(t.prod);return `${a?a.nome:"Anúncio"}${p?" · "+p.nome:""}`}if(t.k==="transf")return `${t.de} → ${t.para}`;if(t.k==="pagfat")return `Fatura ${t.card} de ${dShort(t.due)}`;if(t.k==="ajuste")return `Ajuste ${t.conta}`;return t.desc||t.cat||""}
+function renderList(){const k=curK();$("ltipo").innerHTML=[["","Tudo"]].concat(TIPOS).map(([v,l])=>`<button data-t="${v}" aria-pressed="${ltipo===v}">${l}</button>`).join("");
+ const L=inMonth(k).filter(pass).filter(t=>!ltipo||t.k===ltipo).sort((a,b)=>b.data.localeCompare(a.data));
+ const miss=fixasFaltando(k);const fb=$("fixbtn");fb.hidden=!miss.length;fb.textContent=`Lançar ${miss.length} ${miss.length>1?"despesas fixas":"despesa fixa"} do mês`;
+ $("ltab").innerHTML=L.length?`<tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Empresa</th><th>Pagamento</th><th class="n">Valor</th></tr>`+L.map(t=>{const card=pagCard(t),cta=pagConta(t);const pg=card?`${card}<span class="badge mute">fatura ${dShort(dueOf(card,t.data))}</span>`:cta?`${cta}${t.pago===false?`<span class="badge pend">pendente</span>`:""}`:t.k==="venda"?esc(t.plat):"";const pos=t.k==="venda"||t.k==="rec"||(t.k==="ajuste"&&t.valor>0);return `<tr class="rowc" data-id="${esc(t.id)}"><td>${dShort(t.data)}</td><td><span class="badge ${t.k==="venda"||t.k==="rec"?"info":t.k==="ads"?"pend":"mute"}" style="margin:0">${TNAME[t.k]}</span></td><td>${esc(txDesc(t))}${t.obs?`<br><small class="hint">${esc(t.obs)}</small>`:""}${t.k==="desp"?`<br><small class="hint">${esc(t.cat)}${t.intl?" · +IOF":""}</small>`:""}</td><td><small>${esc((cnpjOf(txCnpj(t))||{}).nome||"")}</small></td><td><small>${pg}</small></td><td class="n ${pos?"in":""}">${t.k==="venda"?`${M(t.bruto)}<br><small class="hint">líquido ${M(vendaLiq(t))}</small>`:t.k==="ads"?`${M(adsSplit(t).total)}<br><small class="hint">mídia ${M(adsSplit(t).midia)}</small>`:M(txVal(t))}</td></tr>`}).join(""):`<tr><td class="empty">Nenhum lançamento ${ltipo?"desse tipo ":""}neste mês.</td></tr>`}
+$("ltipo").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;ltipo=b.dataset.t;renderList()});
+$("ltab").addEventListener("click",e=>{const r=e.target.closest("[data-id]");if(!r)return;const t=all().find(x=>x.id===r.dataset.id);if(t)openForm(t.k,t)});
+function fixasFaltando(k){const have=new Set(inMonth(k).filter(t=>t.fix).map(t=>t.fix));return (cfg.fixas||[]).filter(f=>f.ativo&&!have.has(f.id)&&(!fc||f.cnpj===fc))}
+$("fixbtn").onclick=async()=>{const k=curK(),miss=fixasFaltando(k);const list=miss.map(f=>({id:uid("t"),k:"desp",data:dayIn(k,f.dia),desc:f.nome,cat:f.cat,valor:+f.valor||0,cnpj:f.cnpj,pag:f.pag,intl:!!f.intl,pago:f.pag.startsWith("card:")?true:false,fix:f.id}));await saveTxs(list);toast(`${list.length} despesas fixas lançadas como pendentes. Confira os valores.`)};
+
+/* ---------- produtos ---------- */
+function prodStats(pid,ks){const p=prodOf(pid),c=p&&cnpjOf(p.cnpj);let fat=0,qtd=0,taxa=0,das=0,midia=0,ads=0;for(const k of ks){const al=c?aliqEf(k,c):0;for(const t of inMonth(k)){if(t.k==="venda"&&t.prod===pid){fat+=+t.bruto||0;qtd+=+t.qtd||0;taxa+=(+t.taxa||0)+(+t.reemb||0);das+=((+t.bruto||0)-(+t.reemb||0))*al}else if(t.k==="ads"&&t.prod===pid){const s=adsSplit(t);midia+=s.midia;ads+=s.total}}}return {fat,qtd,taxa,das,midia,ads,lucro:fat-taxa-das-ads}}
+function renderProds(){document.querySelectorAll("#pper button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.p===pper)));const k=curK(),ks=pper==="mes"?[k]:Array.from({length:cur.m+1},(_,i)=>ym(cur.y,i));
+ const ps=cfg.prods.filter(p=>!fc||p.cnpj===fc);let semP={midia:0,ads:0};for(const kk of ks)for(const t of inMonth(kk))if(t.k==="ads"&&!t.prod&&pass(t)){const s=adsSplit(t);semP.midia+=s.midia;semP.ads+=s.total}
+ const rows=ps.map(p=>({p,st:prodStats(p.id,ks)}));const tag=p=>p.status==="teste"?`<span class="badge pend">teste</span>`:p.status==="pausado"?`<span class="badge mute">pausado</span>`:"";
+ $("ptab").innerHTML=`<tr><th>Produto</th><th class="n">Vendas</th><th class="n">Faturamento</th><th class="n">Taxas + DAS</th><th class="n">Anúncio (real)</th><th class="n">ROAS gerenc.</th><th class="n">ROAS real</th><th class="n">Custo/venda</th><th class="n">Lucro do produto</th></tr>`+rows.map(({p,st})=>`<tr><td>${esc(p.nome)}${tag(p)}<br><small class="hint">${esc(p.papel)} · ${esc((cnpjOf(p.cnpj)||{}).nome||"")}</small></td><td class="n">${st.qtd}</td><td class="n in">${M(st.fat)}</td><td class="n">${M(st.taxa+st.das)}</td><td class="n">${M(st.ads)}</td><td class="n">${xx(st.midia?st.fat/st.midia:NaN)}</td><td class="n">${xx(st.ads?st.fat/st.ads:NaN)}</td><td class="n">${st.ads&&st.qtd?M(st.ads/st.qtd):"–"}</td><td class="n ${st.lucro>=0?"okc":"out"}">${M(st.lucro)}</td></tr>`).join("")+(semP.ads?`<tr><td>Anúncios sem produto escolhido<br><small class="hint">campanhas gerais ou de vários produtos</small></td><td></td><td></td><td></td><td class="n">${M(semP.ads)}</td><td></td><td></td><td></td><td class="n out">${M(-semP.ads)}</td></tr>`:"")}
+$("pper").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;pper=b.dataset.p;renderProds()});
+
+/* ---------- contas ---------- */
+function renderContas(){const S=saldos();$("ctab").innerHTML=`<tr><th>Conta</th><th>Tipo</th><th>Empresa</th><th class="n">Saldo</th><th></th></tr>`+cfg.contas.filter(c=>!fc||c.cnpj===fc).map(c=>`<tr><td>${esc(c.nome)}</td><td><small>${c.tipo}</small></td><td><small>${esc((cnpjOf(c.cnpj)||{}).nome||"")}</small></td><td class="n ${S[c.nome]<0?"out":""}"><b>${M(S[c.nome])}</b></td><td class="n"><button class="btn sm" data-aj="${esc(c.nome)}">Ajustar saldo</button></td></tr>`).join("");
+ const F=faturas().filter(f=>!f.quit||dDiff(f.due)>-45);$("fats").innerHTML=F.length?`<div class="tscroll"><table><tr><th>Cartão</th><th>Fecha</th><th>Vence</th><th class="n">Itens</th><th class="n">Total</th><th></th></tr>`+F.map(f=>`<tr><td>${esc(f.card)}</td><td>${dShort(f.close)}</td><td>${dShort(f.due)}${f.quit?`<span class="badge ok">paga</span>`:dDiff(f.due)<0?`<span class="badge over">atrasada</span>`:f.close<=todayS?`<span class="badge pend">fechada</span>`:`<span class="badge info">aberta</span>`}</td><td class="n">${f.itens.length}</td><td class="n"><b>${M(f.total)}</b>${f.pago&&!f.quit?`<br><small class="hint">pago ${M(f.pago)}</small>`:""}</td><td class="n">${f.quit?"":`<button class="btn sm" data-pf="${esc(f.card+"|"+f.due)}">Pagar</button>`}</td></tr>`).join("")+`</table></div>`:`<p class="empty">Nenhuma compra no cartão lançada.</p>`}
+$("ctab").addEventListener("click",e=>{const b=e.target.closest("[data-aj]");if(b)openAjuste(b.dataset.aj)});
+$("fats").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;const f=faturas().find(x=>x.card+"|"+x.due===b.dataset.pf);if(f)openPagFat(f)});
+
+/* ---------- impostos ---------- */
+function renderImp(){const out=[];for(const c of cfg.cnpjs){if(fc&&c.id!==fc)continue;const k0=curK();const rows=[];for(let i=11;i>=0;i--){const k=addM(k0,-i);if(!firstK||k<firstK)continue;const base=baseMonth(k,c.id),al=aliqEf(k,c),v=dasMonth(k,c),due=dayIn(addM(k,1),20);const pago=inMonth(addM(k,1)).filter(t=>t.k==="desp"&&t.cat==="DAS (pagamento)"&&t.cnpj===c.id).reduce((a,t)=>a+despTot(t),0);const st=pago>=v-0.01&&v>0?`<span class="badge ok">pago</span>`:v<=0.004?"":dDiff(due)<0?`<span class="badge over">atrasado</span>`:k>=nowK?`<span class="badge info">acumulando</span>`:`<span class="badge pend">a pagar</span>`;rows.push(`<tr><td>${cap(kName(k,{month:"short",year:"numeric"}))}</td><td class="n">${M(base)}</td><td class="n">${c.regime==="mei"?"fixo":pc(al,2)}</td><td class="n"><b>${M(v)}</b></td><td>${dShort(due)}${st}</td><td class="n">${pago?M(pago):"–"}</td></tr>`)}
+  const k=curK(),rbt=rbt12(k,c);
+  out.push(`<div class="panel"><h2>${esc(c.nome)} <span class="badge mute">${c.regime==="mei"?"MEI":"Simples Nacional · Anexo "+esc(c.anexo||"III")}</span></h2><p class="hint">${c.regime==="mei"?`DAS fixo de ${M(+c.mei||0)} por mês, qualquer que seja o faturamento. Fique de olho no limite anual do MEI.`:(c.aliq!==""&&c.aliq!=null?`Usando a alíquota fixa de ${esc(c.aliq)}% definida em Configurar.`:`Alíquota efetiva de ${pc(aliqEf(k,c),2)} em ${kName(k,{month:"long"})}, calculada pelo faturamento dos 12 meses anteriores (${M(rbt)}). Ela sobe sozinha quando o faturamento muda de faixa.`)} Para o DAS pago aparecer aqui, lance a despesa na categoria “DAS (pagamento)” com a empresa certa.</p>${rows.length?`<div class="tscroll"><table><tr><th>Mês da venda</th><th class="n">Faturamento</th><th class="n">Alíquota</th><th class="n">DAS previsto</th><th>Vence</th><th class="n">Pago</th></tr>${rows.join("")}</table></div>`:`<p class="empty">Os meses aparecem conforme você lança vendas.</p>`}</div>`)}
+ out.push(`<div class="panel"><h2>Como os impostos do tráfego são calculados</h2><div class="kv"><span>Contas de anúncio em real<small>A Meta cobra PIS/Cofins (9,25%) e ISS (2,9%) junto com a mídia desde janeiro de 2026. De cada cobrança, 12,15% são esses impostos.</small></span><b>12,15%</b></div><div class="kv"><span>Contas de anúncio em dólar<small>O cartão cobra IOF sobre o valor convertido, numa linha separada da fatura.</small></span><b>+3,5%</b></div><div class="kv"><span>Ferramentas pagas em dólar<small>Marque “compra internacional” na despesa para o IOF entrar na conta.</small></span><b>+3,5%</b></div><p class="hint" style="margin:10px 0 0">No Simples Nacional esses impostos não geram crédito: são custo do anúncio. Os percentuais podem ser trocados em Configurar se mudarem.</p></div>`);
+ $("imp").innerHTML=out.join("")}
+
+/* ---------- formulário ---------- */
+let fTipo="venda",editing=null;
+const pagSel=(id,sel)=>`<select id="${id}"><optgroup label="Cartão de crédito">${cfg.cards.map(c=>opt("card:"+c.nome,c.nome,sel)).join("")}</optgroup><optgroup label="Conta (débito, Pix, boleto)">${cfg.contas.filter(c=>c.tipo==="banco").map(c=>opt("conta:"+c.nome,c.nome,sel)).join("")}</optgroup></select>`;
+const cnpjSel=(id,sel)=>`<select id="${id}">${cfg.cnpjs.map(c=>opt(c.id,c.nome,sel)).join("")}</select>`;
+const contaSel=(id,sel,f)=>`<select id="${id}">${cfg.contas.filter(f||(()=>true)).map(c=>opt(c.nome,c.nome,sel)).join("")}</select>`;
+const prodSel=(id,sel,blank)=>`<select id="${id}">${blank?opt("",blank,sel):""}${cfg.prods.filter(p=>p.status!=="pausado"||p.id===sel).map(p=>opt(p.id,p.nome+(p.status==="teste"?" (teste)":""),sel)).join("")}${cfg.prods.filter(p=>p.status==="pausado"&&p.id!==sel).map(p=>opt(p.id,p.nome+" (pausado)",sel)).join("")}</select>`;
+const inp=(id,l,v,cls="",extra="")=>`<label class="${cls}">${l}<input id="${id}" value="${esc(v??"")}" ${extra}></label>`;
+function openForm(tipo,t){restoreSave();editing=t||null;fTipo=tipo||"venda";$("dlgt").textContent=t?`Editar ${TNAME[t.k].toLowerCase()}`:"Lançar";$("fdel").hidden=!t;$("ferr").textContent="";
+ $("ftipo").hidden=!!t;$("ftipo").innerHTML=TIPOS.map(([v,l])=>`<button type="button" data-ft="${v}" aria-pressed="${fTipo===v}">${l}</button>`).join("");
+ if(t&&(t.k==="pagfat"||t.k==="ajuste")){buildSimple(t)}else buildForm();$("ov").hidden=false;setTimeout(()=>{const i=$("fbody").querySelector("input:not([type=date]),textarea");if(i&&!t)i.focus()},50)}
+$("ftipo").addEventListener("click",e=>{const b=e.target.closest("[data-ft]");if(!b)return;fTipo=b.dataset.ft;openForm(fTipo)});
+const defDate=()=>curK()===nowK?todayS:dayIn(curK(),1);
+function buildForm(){const t=editing||{},d=t.data||defDate();let h="";
+ if(fTipo==="venda"){const p=prodOf(t.prod)||cfg.prods.find(x=>x.status==="ativo")||cfg.prods[0]||{};h=`<div class="fgrid"><label class="full">Produto${prodSel("vprod",t.prod||p.id)}</label><label>Plataforma<select id="vplat">${cfg.plats.map(x=>opt(x.nome,x.nome,t.plat||p.plat)).join("")}</select></label>${inp("vdt","Data",d,"",'type="date"')}${inp("vqtd","Quantidade de vendas",t.qtd||1,"",'type="number" min="1" inputmode="numeric"')}${inp("vbruto","Valor bruto (o que o cliente pagou, somado)",fmtIn(t.bruto),"",'inputmode="decimal" placeholder="0,00"')}${inp("vtaxa","Taxa da plataforma",fmtIn(t.taxa),"",'inputmode="decimal" placeholder="calculada sozinha"')}${inp("vreemb","Reembolsos / chargebacks",fmtIn(t.reemb),"",'inputmode="decimal" placeholder="0,00"')}${inp("vobs","Observação",t.obs,"full")}</div><p class="hint" style="margin-top:8px">Pode lançar venda por venda ou o total do dia/semana de cada produto. Order bump entra como venda do próprio produto.</p>`}
+ else if(fTipo==="ads"){h=`<div class="fgrid"><label>Conta de anúncios<select id="aconta">${cfg.ads.map(a=>opt(a.id,a.nome,t.conta)).join("")}</select></label>${inp("adt","Data da cobrança",d,"",'type="date"')}<label class="full">${t.id?"Valor cobrado":"Valores cobrados (um por linha, como aparecem na fatura)"}${t.id?`<input id="avals" value="${esc(fmtIn(t.cobrado))}" inputmode="decimal">`:`<textarea id="avals" placeholder="248,16&#10;248,42&#10;482,50"></textarea>`}</label><label>Produto${prodSel("aprod",t.prod||"","Vários / geral")}</label><label>Como pagou${pagSel("apag",t.pag||"card:Nubank PJ")}</label><label class="chk full"><input type="checkbox" id="apago" ${t.pago===false?"":"checked"}> Já pago (só vale para conta; no cartão conta a fatura)</label></div><p class="hint" style="margin-top:8px" id="ahint"></p>`}
+ else if(fTipo==="desp"){h=`<div class="fgrid">${inp("ddesc","Descrição",t.desc,"full",'placeholder="ex.: Canva, contabilidade, DAS de outubro"')}<label>Categoria<select id="dcat">${CATS.map(([c])=>opt(c,c,t.cat||"Ferramentas e softwares")).join("")}</select></label><label>Empresa${cnpjSel("dcnpj",t.cnpj||fc||"ft")}</label>${inp("dval",t.id?"Valor":"Valor total","" +fmtIn(t.valor),"",'inputmode="decimal" placeholder="0,00"')}${inp("ddt","Data",d,"",'type="date"')}<label>Como pagou${pagSel("dpag",t.pag||"card:Nubank PJ")}</label>${t.id?"":inp("dparc","Parcelas",1,"",'type="number" min="1" max="24"')}<label class="chk"><input type="checkbox" id="dintl" ${t.intl?"checked":""}> Compra internacional (+3,5% IOF)</label><label class="chk"><input type="checkbox" id="dpago" ${t.pago===false?"":"checked"}> Já pago</label>${inp("dobs","Observação",t.obs,"full")}</div>`}
+ else if(fTipo==="transf"){h=`<div class="fgrid"><label>De${contaSel("tde",t.de||"Greenn")}</label><label>Para${contaSel("tpara",t.para||"Nubank PJ")}</label>${inp("tval","Valor que chegou",fmtIn(t.valor),"",'inputmode="decimal" placeholder="0,00"')}${inp("ttaxa","Taxa de saque",fmtIn(t.taxa),"",'inputmode="decimal" placeholder="0,00"')}${inp("tdt","Data",d,"",'type="date"')}${inp("tobs","Observação",t.obs)}</div><p class="hint" style="margin-top:8px">Saque da plataforma para o banco, ou dinheiro entre contas. Não é gasto: só muda de lugar. A taxa de saque entra como custo da venda.</p>`}
+ else if(fTipo==="rec"){h=`<div class="fgrid">${inp("rdesc","Descrição",t.desc||"Rendimentos","full")}<label>Conta${contaSel("rconta",t.conta||"Nubank PJ")}</label>${inp("rval","Valor",fmtIn(t.valor),"",'inputmode="decimal" placeholder="0,00"')}${inp("rdt","Data",d,"",'type="date"')}</div><p class="hint" style="margin-top:8px">Rendimentos e outras entradas que não são venda de produto.</p>`}
+ $("fbody").innerHTML=h;updPrev()}
+function buildSimple(t){$("fbody").innerHTML=`<div class="fgrid">${inp("sval","Valor",fmtIn(t.valor),"",'inputmode="decimal"')}${inp("sdt","Data",t.data,"",'type="date"')}</div><p class="hint" style="margin-top:8px">${esc(txDesc(t))}</p>`;$("fprev").hidden=true}
+function updPrev(){const P=$("fprev");P.hidden=true;if(fTipo==="venda"&&$("vbruto")){const b=parseMoney($("vbruto").value)||0,q=+$("vqtd").value||1,auto=platTaxa($("vplat").value,b,q),tx=$("vtaxa").dataset.manual?parseMoney($("vtaxa").value)||0:auto;if(!$("vtaxa").dataset.manual)$("vtaxa").placeholder=b?fmtIn(auto)+" (automática)":"calculada sozinha";const p=prodOf($("vprod").value),c=p&&cnpjOf(p.cnpj),al=c?aliqEf($("vdt").value.slice(0,7)||curK(),c):0,rb=parseMoney($("vreemb").value)||0;if(b){P.hidden=false;P.innerHTML=`Cai na plataforma: <b>${M(b-tx-rb)}</b> · taxa ${M(tx)}${c&&c.regime!=="mei"?` · separe ${M((b-rb)*al)} para o DAS (${pc(al,2)})`:""}`}}
+ if(fTipo==="ads"&&$("avals")){const a=adOf($("aconta").value)||{};$("ahint").textContent=a.moeda==="USD"?"Conta em dólar: lance o valor em reais que aparece na fatura (sem o IOF). O IOF de 3,5% é somado sozinho.":"Conta em real: lance o valor cobrado no cartão (já com os impostos). O app separa a mídia dos impostos.";const vs=String($("avals").value).split(/\n|;/).map(parseMoney).filter(v=>v>0);if(vs.length){const s=vs.reduce((acc,v)=>{const x=adsSplit({conta:a.id,cobrado:v});acc.m+=x.midia;acc.i+=x.imp;acc.o+=x.iof;acc.t+=x.total;return acc},{m:0,i:0,o:0,t:0});P.hidden=false;P.innerHTML=`${vs.length>1?vs.length+" cobranças · ":""}Mídia <b>${M(s.m)}</b> · impostos ${M(s.i)} · IOF ${M(s.o)} · custo real <b>${M(s.t)}</b>`}}
+ if(fTipo==="desp"&&$("dval")){const v=parseMoney($("dval").value)||0,n=$("dparc")?Math.max(1,+$("dparc").value||1):1;if(v){P.hidden=false;const each=v/n,iof=$("dintl").checked?each*IOF_INT/100:0;P.innerHTML=`${n>1?`${n} parcelas de <b>${M(each)}</b>`:`<b>${M(v)}</b>`}${iof?` + IOF ${M(iof)}${n>1?" por parcela":""}`:""} · entra em <b>${GNAME[CATG[$("dcat").value]||"estrutura"]}</b>`}}}
+$("fbody").addEventListener("input",e=>{if(e.target.id==="vtaxa")e.target.dataset.manual=e.target.value.trim()?"1":"";updPrev()});
+$("fbody").addEventListener("change",e=>{if(e.target.id==="vprod"){const p=prodOf(e.target.value);if(p&&p.plat)$("vplat").value=p.plat}updPrev()});
+function closeForm(){$("ov").hidden=true;editing=null}
+$("fcancel").onclick=closeForm;$("ov").addEventListener("click",e=>{if(e.target===$("ov"))closeForm()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("ov").hidden)closeForm()});
+const need=(cond,msg)=>{if(!cond)throw new Error(msg)};
+$("fsave").onclick=async()=>{const btn=$("fsave");try{$("ferr").textContent="";const t0=editing;const base=t0?{...t0}:{id:uid("t")};let list=[];
+ if(t0&&(t0.k==="pagfat"||t0.k==="ajuste")){const v=parseMoney($("sval").value);need(!isNaN(v),"Valor inválido");list=[{...base,valor:r2(v),data:$("sdt").value||t0.data}]}
+ else if(fTipo==="venda"){const b=parseMoney($("vbruto").value),q=Math.max(1,Math.round(+$("vqtd").value||1));need(b>0,"Informe o valor bruto");const auto=platTaxa($("vplat").value,b,q);const tx=$("vtaxa").dataset.manual||(t0&&$("vtaxa").value.trim())?parseMoney($("vtaxa").value):auto;list=[{...base,k:"venda",prod:$("vprod").value,plat:$("vplat").value,data:$("vdt").value||defDate(),qtd:q,bruto:r2(b),taxa:r2(isNaN(tx)?auto:tx),reemb:r2(parseMoney($("vreemb").value)||0),obs:$("vobs").value.trim()}]}
+ else if(fTipo==="ads"){const vs=String($("avals").value).split(/\n|;/).map(parseMoney).filter(v=>v>0);need(vs.length,"Informe o valor cobrado");const o={k:"ads",conta:$("aconta").value,prod:$("aprod").value,data:$("adt").value||defDate(),pag:$("apag").value,pago:$("apag").value.startsWith("card:")?true:$("apago").checked};list=t0?[{...base,...o,cobrado:r2(vs[0])}]:vs.map(v=>({id:uid("t"),...o,cobrado:r2(v)}))}
+ else if(fTipo==="desp"){const v=parseMoney($("dval").value);need(v>0,"Informe o valor");need($("ddesc").value.trim(),"Informe a descrição");const o={k:"desp",desc:$("ddesc").value.trim(),cat:$("dcat").value,cnpj:$("dcnpj").value,pag:$("dpag").value,intl:$("dintl").checked,obs:$("dobs").value.trim()};const card=$("dpag").value.startsWith("card:");o.pago=card?true:$("dpago").checked;const d=$("ddt").value||defDate();const n=t0?1:Math.max(1,Math.round(+($("dparc")||{}).value||1));if(n===1)list=[{...base,...o,data:d,valor:r2(v)}];else{const each=r2(v/n);for(let i=0;i<n;i++){const k=addM(d.slice(0,7),i);list.push({id:uid("t"),...o,desc:`${o.desc} (${i+1}/${n})`,data:dayIn(k,+d.slice(8,10)),valor:i===n-1?r2(v-each*(n-1)):each,pago:card?true:(i===0?o.pago:false)})}}}
+ else if(fTipo==="transf"){const v=parseMoney($("tval").value);need(v>0,"Informe o valor");need($("tde").value!==$("tpara").value,"Escolha contas diferentes");list=[{...base,k:"transf",de:$("tde").value,para:$("tpara").value,valor:r2(v),taxa:r2(parseMoney($("ttaxa").value)||0),data:$("tdt").value||defDate(),obs:$("tobs").value.trim()}]}
+ else if(fTipo==="rec"){const v=parseMoney($("rval").value);need(v>0,"Informe o valor");list=[{...base,k:"rec",desc:$("rdesc").value.trim(),conta:$("rconta").value,valor:r2(v),data:$("rdt").value||defDate()}]}
+ btn.disabled=true;const del=t0&&t0.data.slice(0,7)!==list[0].data.slice(0,7)?[[t0.id,t0.data.slice(0,7)]]:[];await saveTxs(list,del);closeForm();toast(list.length>1?`${list.length} lançamentos salvos`:"Salvo")}catch(e){$("ferr").textContent=e.message}finally{btn.disabled=false}};
+$("fdel").onclick=async()=>{const t=editing;if(!t)return;await saveTxs([],[[t.id,t.data.slice(0,7)]]);closeForm();toast("Lançamento excluído")};
+function openPagFat(f){editing=null;fTipo="pagfat";$("dlgt").textContent=`Pagar fatura ${f.card}`;$("ftipo").hidden=true;$("fdel").hidden=true;$("ferr").textContent="";const c=cardOf(f.card)||{};$("fbody").innerHTML=`<div class="fgrid">${inp("pval","Valor pago",fmtIn(r2(f.total-f.pago)),"",'inputmode="decimal"')}${inp("pdt","Data",todayS,"",'type="date"')}<label class="full">Pago com${contaSel("pconta",c.conta||"Nubank PJ",x=>x.tipo==="banco")}</label></div><p class="hint" style="margin-top:8px">Fatura que vence em ${dShort(f.due)}, com ${f.itens.length} ${f.itens.length>1?"itens":"item"}.</p>`;$("fprev").hidden=true;$("ov").hidden=false;
+ $("fsave").onclick=async()=>{const v=parseMoney($("pval").value);if(!(v>0)){$("ferr").textContent="Valor inválido";return}await saveTxs([{id:uid("t"),k:"pagfat",card:f.card,due:f.due,valor:r2(v),pag:"conta:"+$("pconta").value,data:$("pdt").value||todayS}]);closeForm();restoreSave();toast("Fatura paga")}}
+function openAjuste(nome){editing=null;fTipo="ajuste";const S=saldos();$("dlgt").textContent=`Ajustar saldo · ${nome}`;$("ftipo").hidden=true;$("fdel").hidden=true;$("ferr").textContent="";$("fbody").innerHTML=`<div class="fgrid">${inp("jval","Saldo real agora",fmtIn(S[nome]),"",'inputmode="decimal"')}</div><p class="hint" style="margin-top:8px">Saldo pelo app: ${M(S[nome])}. A diferença vira um lançamento de ajuste com a data de hoje.</p>`;$("fprev").hidden=true;$("ov").hidden=false;
+ $("fsave").onclick=async()=>{const v=parseMoney($("jval").value);if(isNaN(v)){$("ferr").textContent="Valor inválido";return}const dif=r2(v-S[nome]);if(Math.abs(dif)>0.004)await saveTxs([{id:uid("t"),k:"ajuste",conta:nome,valor:dif,data:todayS}]);closeForm();restoreSave();toast("Saldo ajustado")}}
+const mainSave=$("fsave").onclick;function restoreSave(){$("fsave").onclick=mainSave}
+$("fcancel").addEventListener("click",restoreSave);
+$("add").onclick=()=>{restoreSave();openForm(ltipo&&TIPOS.some(x=>x[0]===ltipo)?ltipo:"venda")};
+
+/* ---------- configurar ---------- */
+const CFG_UI=[
+ {sec:"cnpjs",title:"Empresas (CNPJ)",hint:"No Simples, deixe a alíquota em branco para o app calcular pela faixa de faturamento, ou preencha com a alíquota que a contabilidade usa. “Faturamento 12 meses antes” serve para calcular a faixa enquanto o app ainda não tem um ano de vendas.",fields:[["nome","Nome"],["regime","Regime",[["simples","Simples Nacional"],["mei","MEI"]]],["anexo","Anexo",[["III","III"],["V","V"]]],["aliq","Alíquota fixa %","pct"],["rbtIni","Faturamento 12 meses antes do app","money"],["mei","DAS fixo MEI","money"]],add:()=>({id:uid("c"),nome:"Nova empresa",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0})},
+ {sec:"prods",title:"Produtos",hint:"Teste: aparece separado no painel. Pausado: some das listas de lançamento, mas continua no histórico.",fields:[["nome","Nome"],["cnpj","Empresa","cnpj"],["papel","Papel",[["principal","Principal"],["bump","Order bump"],["bump e direto","Bump e direto"]]],["status","Situação",[["ativo","Ativo"],["teste","Teste"],["pausado","Pausado"]]],["plat","Plataforma","plat"],["preco","Preço","money"]],add:()=>({id:uid("p"),nome:"Novo produto",cnpj:fc||"ft",papel:"principal",status:"teste",plat:"Greenn",preco:""})},
+ {sec:"plats",title:"Plataformas de venda",hint:"Taxa cobrada em cada venda. A conta é onde o dinheiro da venda fica até o saque. Confira as taxas da Hotmart e da Kiwify no seu plano.",fields:[["nome","Nome"],["pct","Taxa %","num"],["fixo","Fixo por venda","money"],["conta","Conta","conta"]],add:()=>({nome:"Nova",pct:0,fixo:0,conta:""})},
+ {sec:"ads",title:"Contas de anúncio",hint:"Em real: 12,15% de impostos dentro do valor cobrado. Em dólar: 0% de impostos e 3,5% de IOF somado. Renomeie com o nome real de cada conta.",fields:[["nome","Nome"],["cnpj","Empresa","cnpj"],["moeda","Moeda",[["BRL","Real"],["USD","Dólar"]]],["imp","Impostos dentro %","num"],["iof","IOF somado %","num"]],add:()=>({id:uid("a"),nome:"Nova conta",cnpj:fc||"ft",moeda:"BRL",imp:12.15,iof:0})},
+ {sec:"contas",title:"Contas e plataformas",hint:"Saldo inicial = quanto havia em cada uma no dia em que você começou a usar o app.",fields:[["nome","Nome"],["tipo","Tipo",[["banco","Banco"],["plataforma","Plataforma"]]],["cnpj","Empresa","cnpj"],["ini","Saldo inicial","money"]],add:()=>({nome:"Nova conta",tipo:"banco",cnpj:fc||"ft",ini:0})},
+ {sec:"cards",title:"Cartões de crédito",hint:"Dia em que a fatura fecha e dia em que vence. Confira o do Cora.",fields:[["nome","Nome"],["fecha","Fecha dia","num"],["vence","Vence dia","num"],["conta","Paga com","conta"]],add:()=>({nome:"Novo cartão",fecha:1,vence:8,conta:"Nubank PJ"})},
+ {sec:"fixas",title:"Despesas fixas",hint:"Viram pendentes com um toque em Lançamentos (“Lançar despesas fixas do mês”). Ajuste os valores reais quando pagar.",fields:[["ativo","Ativa","bool"],["nome","Nome"],["cat","Categoria","cat"],["valor","Valor","money"],["dia","Dia","num"],["pag","Como paga","pag"],["cnpj","Empresa","cnpj"],["intl","Internacional","bool"]],add:()=>({id:uid("f"),nome:"Nova despesa",cat:"Ferramentas e softwares",valor:0,dia:1,pag:"card:Nubank PJ",cnpj:fc||"ft",intl:false,ativo:true})}];
+function cfgInput(sec,i,f,v){const [key,,type]=f,a=`data-s="${sec}" data-i="${i}" data-f="${key}"`;
+ if(Array.isArray(type))return `<select ${a}>${type.map(([o,l])=>opt(o,l,v)).join("")}</select>`;
+ if(type==="cnpj")return `<select ${a}>${cfg.cnpjs.map(c=>opt(c.id,c.nome,v)).join("")}</select>`;
+ if(type==="conta")return `<select ${a}>${opt("","—",v)}${cfg.contas.map(c=>opt(c.nome,c.nome,v)).join("")}</select>`;
+ if(type==="plat")return `<select ${a}>${cfg.plats.map(c=>opt(c.nome,c.nome,v)).join("")}</select>`;
+ if(type==="cat")return `<select ${a}>${CATS.map(([c])=>opt(c,c,v)).join("")}</select>`;
+ if(type==="pag")return `<select ${a}>${cfg.cards.map(c=>opt("card:"+c.nome,"Cartão "+c.nome,v)).join("")}${cfg.contas.filter(c=>c.tipo==="banco").map(c=>opt("conta:"+c.nome,"Conta "+c.nome,v)).join("")}</select>`;
+ if(type==="bool")return `<input type="checkbox" ${a} ${v?"checked":""} style="width:auto">`;
+ if(type==="money")return `<input ${a} inputmode="decimal" value="${esc(fmtIn(v))}">`;
+ if(type==="num"||type==="pct")return `<input ${a} inputmode="decimal" value="${esc(v===""||v==null?"":String(v).replace(".",","))}">`;
+ return `<input ${a} value="${esc(v)}">`}
+function renderCfg(){const el=$("cfgv");if(el.contains(document.activeElement))return;el.innerHTML=CFG_UI.map(u=>`<div class="panel"><h2>${u.title}</h2><p class="hint">${u.hint}</p><div class="tscroll"><table class="ctab"><tr>${u.fields.map(f=>`<th>${f[1]}</th>`).join("")}<th></th></tr>${(cfg[u.sec]||[]).map((r,i)=>`<tr>${u.fields.map(f=>`<td>${cfgInput(u.sec,i,f,r[f[0]])}</td>`).join("")}<td class="x"><button class="xb" data-rm="${u.sec}" data-i="${i}" title="Remover" aria-label="Remover">×</button></td></tr>`).join("")}</table></div><button class="btn sm" data-addc="${u.sec}" style="margin-top:10px">+ Adicionar</button></div>`).join("")}
+let cfgT=null;function cfgChanged(){clearTimeout(cfgT);cfgT=setTimeout(async()=>{await saveCfg();toast("Configuração salva")},700)}
+$("cfgv").addEventListener("change",e=>{const x=e.target;if(!x.dataset.s)return;const u=CFG_UI.find(u=>u.sec===x.dataset.s),f=u.fields.find(f=>f[0]===x.dataset.f),r=cfg[x.dataset.s][+x.dataset.i];let v=x.type==="checkbox"?x.checked:x.value;
+ if(f[2]==="money"){v=x.value.trim()===""?"":r2(parseMoney(x.value));if(Number.isNaN(v))return}else if(f[2]==="num"){v=parseMoney(x.value);if(Number.isNaN(v))return}else if(f[2]==="pct"){v=x.value.trim()}
+ const old=r[x.dataset.f];r[x.dataset.f]=v;
+ if(x.dataset.s==="ads"&&x.dataset.f==="moeda"){if(v==="USD"){r.imp=0;r.iof=3.5}else{r.imp=12.15;r.iof=0}renderCfg()}
+ if(x.dataset.f==="nome"&&typeof old==="string"&&old!==v){/* renomear conta ou cartão: atualiza referências */if(x.dataset.s==="contas"){for(const p of cfg.plats)if(p.conta===old)p.conta=v;for(const c of cfg.cards)if(c.conta===old)c.conta=v;for(const f2 of cfg.fixas)if(f2.pag==="conta:"+old)f2.pag="conta:"+v}if(x.dataset.s==="cards"){for(const f2 of cfg.fixas)if(f2.pag==="card:"+old)f2.pag="card:"+v}}
+ cfgChanged()});
+$("cfgv").addEventListener("click",e=>{const a=e.target.closest("[data-addc]");if(a){const u=CFG_UI.find(u=>u.sec===a.dataset.addc);cfg[u.sec].push(u.add());renderCfg();cfgChanged();return}const r=e.target.closest("[data-rm]");if(r){const arr=cfg[r.dataset.rm],it=arr[+r.dataset.i];if(r.dataset.rm==="cnpjs"&&arr.length<2)return toast("Precisa ter pelo menos uma empresa");if(!confirm(`Remover “${it.nome}”? Lançamentos antigos continuam guardados.`))return;arr.splice(+r.dataset.i,1);renderCfg();cfgChanged()}});
+$("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify({cfg,months},null,1)],{type:"application/json"}));a.download=`empresa-${todayS}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+
+/* ---------- navegação e início ---------- */
+$("prev").onclick=()=>{cur=cur.m?{y:cur.y,m:cur.m-1}:{y:cur.y-1,m:11};render()};
+$("next").onclick=()=>{cur=cur.m<11?{y:cur.y,m:cur.m+1}:{y:cur.y+1,m:0};render()};
+addEventListener("hashchange",()=>{render();scrollTo(0,0)});
+const temaSet=claro=>{if(claro)document.documentElement.dataset.theme="light";else delete document.documentElement.dataset.theme;$("tema").textContent=claro?"🌙":"☀️";try{localStorage.setItem("financas-tema",claro?"claro":"escuro")}catch(e){}};
+temaSet(document.documentElement.dataset.theme==="light");$("tema").onclick=()=>temaSet(document.documentElement.dataset.theme!=="light");
+function normCfg(c){const o={...clone(DEF_CFG),...(c||{})};delete o.kind;for(const k of Object.keys(DEF_CFG))if(!Array.isArray(o[k]))o[k]=clone(DEF_CFG[k]);return o}
+async function load(){const rows=await store.all();months={};for(const r of rows){if(r.key==="emp-cfg"){cfg=normCfg(r.body);cfgRev=+r.rev||0}else if(r.key.startsWith("emp-m-")){months[r.key.slice(6)]=(r.body&&r.body.txs)||[]}}
+ setFirstK();
+ if(!cfgRev)await saveCfg()}
+async function start(){$("auth").hidden=true;$("main").hidden=false;try{await load()}catch(e){toast("Erro ao carregar: "+e.message)}render();scrollTo(0,0)}
+/* firstK acompanha o primeiro mês com dados */
+async function boot(){if(DEMO){user={id:"demo"};return start()}
+ sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ let data=null;try{data=(await sb.auth.getSession()).data}catch(e){}
+ if(data&&data.session){user=data.session.user;return start()}
+ $("auth").hidden=false;$("main").hidden=true}
+$("aform").addEventListener("submit",async e=>{e.preventDefault();$("aerr").textContent="";const {data,error}=await sb.auth.signInWithPassword({email:$("aem").value.trim(),password:$("apw").value});if(error){$("aerr").textContent="E-mail ou senha incorretos.";return}user=data.user;start()});
+boot();
+</script>
+</body>
+</html>
