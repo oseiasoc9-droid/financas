@@ -1,6 +1,6 @@
 // Função "voz" do Supabase: recebe a frase falada ou digitada no app e devolve o lançamento preenchido.
 // A chave da IA fica só aqui no servidor, no segredo ANTHROPIC_API_KEY (nunca no site, que é público).
-// Só responde para quem está logado no app (o Supabase confere o login antes de chamar esta função).
+// Só responde para quem está logado no app (a função confere o login no Supabase antes de chamar a IA).
 import Anthropic from "npm:@anthropic-ai/sdk";
 
 const CORS = {
@@ -45,6 +45,13 @@ Regras:
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ erro: "use POST" }, 405);
+  // confere o login: só quem entrou no app pode usar a IA
+  const auth = req.headers.get("Authorization") || "";
+  const apikey = req.headers.get("apikey") || "";
+  const sbUrl = Deno.env.get("SUPABASE_URL");
+  if (!auth.startsWith("Bearer ") || !sbUrl) return json({ erro: "sem login" }, 401);
+  const u = await fetch(`${sbUrl}/auth/v1/user`, { headers: { Authorization: auth, apikey } });
+  if (!u.ok) return json({ erro: "sem login" }, 401);
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) return json({ erro: "sem chave" }, 503);
   let b: Record<string, unknown>;
