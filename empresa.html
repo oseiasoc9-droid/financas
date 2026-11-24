@@ -143,15 +143,17 @@ html[data-trava] body>*:not(#trava){visibility:hidden!important}
    A digital usa o leitor do próprio celular (WebAuthn). Depois de X minutos sem mexer, pede o PIN de novo.
    As duas páginas usam as mesmas chaves, então o PIN e o tempo valem para Pessoal e Empresa. */
 window.Trava=(function(){
-const K="financas-trava",KA="financas-trava-ativo",KO="financas-trava-oferta",MAXT=6,MINT=4;
+const K="financas-trava",KA="financas-trava-ativo",KO="financas-trava-oferta",KS="financas-trava-sessao",MAXT=6,MINT=4;
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const cfg=()=>{try{return JSON.parse(ls.get(K)||"null")}catch(e){return null}};
 const salva=c=>ls.set(K,JSON.stringify(c));
 const ativo=()=>+ls.get(KA)||0,marca=()=>ls.set(KA,String(Date.now()));
+/* sessionStorage some quando o app é fechado; passar de Pessoal para Empresa não apaga */
+const sessao=()=>{try{return sessionStorage.getItem(KS)==="1"}catch(e){return false}},abriu=()=>{try{sessionStorage.setItem(KS,"1")}catch(e){}};
 const ligada=()=>{const c=cfg();return !!(c&&c.hash)};
 const vencido=()=>ligada()&&Date.now()-ativo()>(cfg().min||5)*60000;
 const R=document.documentElement;
-if(vencido())R.dataset.trava="1";else if(ligada())marca();
+if(ligada()&&(vencido()||!sessao()))R.dataset.trava="1";else if(ligada())marca();
 const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
@@ -194,7 +196,7 @@ function digita(n){if(pin.length>=tam())return;pin+=n;erro("");pontos();if(modo!
 function tecla(){if(modo==="novo"){if(pin.length<MINT)return erro(`O PIN precisa ter de ${MINT} a ${MAXT} números.`);pin1=pin;tela("confirma","Digite o PIN de novo para confirmar","Cancelar")}else if(modo==="abre")bio()}
 async function envia(){const c=cfg();ocupado=true;try{
   if(modo==="confirma"){if(pin!==pin1){pin1="";tela("novo","Crie um PIN de 4 a 6 números","Cancelar");return erro("Os PINs não batem. Comece de novo.")}
-    const salt=b64(rnd(16)),hash=await hashPin(pin,salt),old=cfg()||{};salva({hash,salt,len:pin.length,min:old.min||5,cred:old.cred||null});pin1="";marca();ls.set(KO,"1");
+    const salt=b64(rnd(16)),hash=await hashPin(pin,salt),old=cfg()||{};salva({hash,salt,len:pin.length,min:old.min||5,cred:old.cred||null});pin1="";marca();abriu();ls.set(KO,"1");
     if(!old.cred&&await bioDisp())return tela("bio","PIN criado. Quer também desbloquear com a digital (ou o rosto)?");
     return painel("PIN salvo.")}
   const agora=Date.now();if(c.ate&&agora<c.ate){pin="";pontos();return erro(`Muitas tentativas. Espere ${Math.ceil((c.ate-agora)/1000)} segundos.`)}
@@ -203,14 +205,14 @@ async function envia(){const c=cfg();ocupado=true;try{
   erro(c.erros>=5?`PIN errado. Espere ${Math.round((c.ate-agora)/1000)} segundos para tentar de novo.`:"PIN errado. Tente de novo.");
 }finally{ocupado=false}}
 async function bio(){if(ocupado)return;ocupado=true;erro("");try{if(await usaBio())abre();else erro("Não reconheci. Use o PIN.")}catch(e){if(!e||e.name!=="NotAllowedError"&&e.name!=="AbortError")erro("Não deu para usar a digital agora. Use o PIN.")}finally{ocupado=false}}
-function abre(){travado=false;delete R.dataset.trava;marca();el.hidden=true;modo="";pin=""}
+function abre(){travado=false;delete R.dataset.trava;marca();abriu();el.hidden=true;modo="";pin=""}
 function trava(){if(!ligada())return;travado=true;R.dataset.trava="1";tela("abre","Digite seu PIN","Esqueci o PIN");const c=cfg();if(c.cred&&document.visibilityState==="visible")setTimeout(bio,250)}
 async function link(){
   if(modo==="abre"){if(!confirm("Para criar outro PIN, você precisa sair e entrar de novo com e-mail e senha. Continuar?"))return;
     ls.del(K);ls.del(KO);travado=false;delete R.dataset.trava;el.hidden=true;try{if(api.sair)await api.sair();else location.reload()}catch(e){location.reload()}return}
   if(modo==="bio")return painel();fecha()}
 async function painel(msg){const c=cfg();if(!c||!c.hash){pin1="";return tela("novo","Crie um PIN de 4 a 6 números. Ele fica só neste aparelho.","Cancelar")}
-  tela("cfg",msg||"O app pede o PIN quando fica parado.","Fechar");const disp=await bioDisp();
+  tela("cfg",msg||"O app pede o PIN sempre que é aberto, e também quando fica parado.","Fechar");const disp=await bioDisp();
   const op=[1,2,5,10,15,30].map(m=>`<option value="${m}"${(c.min||5)===m?" selected":""}>${m} minuto${m>1?"s":""}</option>`).join("");
   $t("tv-b").innerHTML=`<label>Bloquear depois de quanto tempo sem mexer<select id="tv-min">${op}</select></label>`+
    (disp?`<label class="tv-ck"><input type="checkbox" id="tv-bio"${c.cred?" checked":""}> Desbloquear com a digital</label>`:`<p class="tv-m" style="margin:0">A digital não está disponível neste navegador.</p>`)+
@@ -230,6 +232,7 @@ let ult=0;const mexeu=()=>{if(travado||!ligada())return;const n=Date.now();if(n-
 ["pointerdown","keydown","touchstart","wheel","scroll"].forEach(ev=>addEventListener(ev,mexeu,{passive:true,capture:true}));
 const checa=()=>{if(!travado&&document.visibilityState==="visible"&&vencido())trava()};
 setInterval(checa,10000);
+/* trocar de app só conta o tempo configurado; fechar o app de verdade apaga a marca da sessão */
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){if(!travado&&ligada())marca()}else checa()});
 addEventListener("pageshow",checa);
 addEventListener("storage",e=>{if(e.key===KA&&e.newValue==="0")checa()});
