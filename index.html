@@ -180,7 +180,7 @@ html[data-trava] body>*:not(#trava){visibility:hidden!important}
    A digital usa o leitor do próprio celular (WebAuthn). Depois de X minutos sem mexer, pede o PIN de novo.
    As duas páginas usam as mesmas chaves, então o PIN e o tempo valem para Pessoal e Empresa. */
 window.Trava=(function(){
-const K="financas-trava",KA="financas-trava-ativo",KO="financas-trava-oferta",KS="financas-trava-sessao",MAXT=6,MINT=4,FUNDO=30000;
+const K="financas-trava",KA="financas-trava-ativo",KO="financas-trava-oferta",KS="financas-trava-sessao",MAXT=6,MINT=4;
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const cfg=()=>{try{return JSON.parse(ls.get(K)||"null")}catch(e){return null}};
 const salva=c=>ls.set(K,JSON.stringify(c));
@@ -269,9 +269,8 @@ let ult=0;const mexeu=()=>{if(travado||!ligada())return;const n=Date.now();if(n-
 ["pointerdown","keydown","touchstart","wheel","scroll"].forEach(ev=>addEventListener(ev,mexeu,{passive:true,capture:true}));
 const checa=()=>{if(!travado&&document.visibilityState==="visible"&&vencido())trava()};
 setInterval(checa,10000);
-/* saiu do app (foi para outro app ou tela inicial) por mais de 30 s: pede o PIN ao voltar */
-let saiu=0;
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){saiu=Date.now();if(!travado&&ligada())marca()}else{if(!travado&&ligada()&&saiu&&Date.now()-saiu>FUNDO)trava();else checa();saiu=0}});
+/* trocar de app só conta o tempo configurado; fechar o app de verdade apaga a marca da sessão */
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){if(!travado&&ligada())marca()}else checa()});
 addEventListener("pageshow",checa);
 addEventListener("storage",e=>{if(e.key===KA&&e.newValue==="0")checa()});
 const inicio=()=>{botao();if(R.dataset.trava&&ligada())trava()};
