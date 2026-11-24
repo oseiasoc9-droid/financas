@@ -260,7 +260,7 @@ const DEF_CFG={
   {nome:"Hotmart",tipo:"plataforma",cnpj:"tm",ini:0},
   {nome:"Kiwify",tipo:"plataforma",cnpj:"ft",ini:0},
   {nome:"MP Tainá",tipo:"banco",cnpj:"tm",ini:0}],
- cards:[{nome:"Nubank PJ",fecha:1,vence:8,conta:"Nubank PJ"},{nome:"Cora",fecha:5,vence:10,conta:"Nubank PJ"}],
+ cards:[{nome:"Nubank PJ",fecha:7,vence:14,conta:"Nubank PJ"},{nome:"Cora",fecha:22,vence:27,conta:"Nubank PJ"}],
  fixas:[
   {id:"f1",nome:"Contabilidade",cat:"Contabilidade",valor:230,dia:13,pag:"conta:Nubank PJ",cnpj:"ft",intl:false,ativo:true},
   {id:"f2",nome:"Meres (endereço digital)",cat:"Endereço e custos do CNPJ",valor:59,dia:1,pag:"card:Cora",cnpj:"ft",intl:false,ativo:true},
@@ -626,7 +626,9 @@ temaSet(document.documentElement.dataset.theme==="light");$("tema").onclick=()=>
 function normCfg(c){const o={...clone(DEF_CFG),...(c||{})};delete o.kind;for(const k of Object.keys(DEF_CFG))if(!Array.isArray(o[k]))o[k]=clone(DEF_CFG[k]);return o}
 async function load(){const rows=await store.all();months={};for(const r of rows){if(r.key==="emp-cfg"){cfg=normCfg(r.body);cfgRev=+r.rev||0}else if(r.key.startsWith("emp-m-")){months[r.key.slice(6)]=(r.body&&r.body.txs)||[]}}
  setFirstK();
- if(!cfgRev)await saveCfg()}
+ /* 24/11/2026: datas reais dos cartões (antes eram estimativas); só troca se ainda estiver com as antigas */
+ let fixCards=false;for(const c of cfg.cards){if(c.nome==="Nubank PJ"&&+c.fecha===1&&+c.vence===8){c.fecha=7;c.vence=14;fixCards=true}if(c.nome==="Cora"&&+c.fecha===5&&+c.vence===10){c.fecha=22;c.vence=27;fixCards=true}}
+ if(!cfgRev||fixCards)await saveCfg()}
 async function start(){$("auth").hidden=true;$("main").hidden=false;try{await load()}catch(e){toast("Erro ao carregar: "+e.message)}render();scrollTo(0,0)}
 /* firstK acompanha o primeiro mês com dados */
 async function boot(){if(DEMO){user={id:"demo"};return start()}

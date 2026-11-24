@@ -42,7 +42,8 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 - Hotmart: **9,9% + R$ 2,49**. Kiwify: **8,99% + R$ 2,49** (em vendas baratas, abaixo de uns R$ 20, a Kiwify não cobra o fixo). Conferido nos relatórios de vendas em 24/11/2026.
 - Ele tem conta na Hotmart e na Kiwify tanto no nome dele (FarmaTécnica) quanto no da Tainá. A Kiwify do Oseias também vende produtos da Tainá (Guia de Alongamento, SouFlex).
 - Contas: **Nubank PJ** (recebe os saques das plataformas), Greenn, Hotmart, Kiwify (saldos dentro das plataformas) e MP Tainá.
-- Cartões de crédito: **Nubank PJ** (fecha dia 1, vence dia 8) e **Cora** (fecha dia 5, vence dia 10; **datas a confirmar**). Ele reveza entre os dois para pagar a Meta.
+- Cartões de crédito da empresa: **Nubank PJ** (fecha dia 7, vence dia 14) e **Cora** (fecha dia 22, vence dia 27; o banco empurra para o dia útil seguinte). Confirmado em 24/11/2026. Ele reveza entre os dois para pagar a Meta. **Digio** e **Clickcard** são cartões pessoais que ele usava antes; ainda há parcelas da empresa neles.
+- "MEI Oseias" na planilha antiga é um MEI dele já baixado (taxas finais).
 
 ### Tráfego e impostos escondidos (o foco do app)
 - Contas de anúncio **em real**: desde jan/2026 a Meta repassa PIS/Cofins (9,25%) e ISS (2,9%). Do valor cobrado no cartão, **12,15% são impostos** (R$ 100 de mídia viram R$ 113,83 cobrados).
@@ -70,8 +71,8 @@ Faturamento bruto − reembolsos − taxas das plataformas − taxas de saque �
 
 ## Pendências e próximos passos
 1. Feito em 24/11/2026: **importar vendas por CSV** (Greenn, Hotmart e Kiwify), botão “Importar vendas (CSV)” em Lançamentos. A Greenn não tem código de transação no CSV; o id é montado com data, produto, valor e data de pagamento.
-2. Confirmar com ele: a alíquota do DAS e a base com o contador, as datas do Cora, os saldos iniciais das contas e os nomes reais das contas de anúncio.
-1b. Feito em 24/11/2026: botão “Importar lançamentos preparados” (Configurar › Copiar ou restaurar) lê um JSON `{kind:"emp-import", titulo, cards, contaAlias, quitarAte, txs}`; pula ids que já existem e marca como pagas as faturas que vencem até `quitarAte`. A planilha “CONTROLE FINANCEIRO EMPRESA 26.xlsx” (jan a ago/2026) foi convertida para `planilha-empresa-2026.json` nos arquivos do projeto. Na planilha os cartões são Digio (vence 5), Nubank (vence 14) e Clickcard (vence 25); não aparece Cora.
+2. Confirmar com ele: a alíquota do DAS e a base com o contador, os saldos iniciais das contas e os nomes reais das contas de anúncio.
+1b. Feito em 24/11/2026: botão “Importar lançamentos preparados” (Configurar › Copiar ou restaurar) lê um JSON `{kind:"emp-import", titulo, cards, contaAlias, quitarAte, txs}`; pula ids que já existem e marca como pagas as faturas que vencem até `quitarAte`. A planilha “CONTROLE FINANCEIRO EMPRESA 26.xlsx” (jan a ago/2026) foi convertida para `planilha-empresa-2026.json` nos arquivos do projeto. 
 2b. Faltam os arquivos `icon-192.png` e `icon-512.png` (o manifest e o apple-touch-icon apontam para eles).
 3. Ideia: o pró-labore pago no lado Empresa virar uma entrada automática na conta MP Oseias do lado Pessoal (requer escrever no formato de dados do `index.html`, com cuidado).
 4. Depois: avaliar a migração das contas de anúncio para dólar (comparar 12,15% de impostos com 3,5% de IOF + câmbio).
