@@ -171,7 +171,7 @@ section[hidden]{display:none}
 <section id="config" hidden>
   <h1>Configurar</h1><p class="sub">Empresas, produtos, plataformas, contas de anúncio, contas, cartões e despesas fixas. Tudo salva sozinho.</p>
   <div id="cfgv"></div>
-  <div class="panel"><h2>Copiar ou restaurar</h2><p class="hint">Baixa todos os dados da empresa num arquivo, para guardar uma cópia.</p><button class="btn sm" id="exp">Baixar cópia (JSON)</button></div>
+  <div class="panel"><h2>Copiar ou restaurar</h2><p class="hint">Baixa todos os dados da empresa num arquivo, para guardar uma cópia.</p><button class="btn sm" id="exp">Baixar cópia (JSON)</button> <button class="btn sm" id="jimpbtn">Importar lançamentos preparados</button></div>
 </section>
 </main>
 
@@ -498,7 +498,7 @@ function impGuess(tipo,name){const m=(cfg.imap||[]).find(x=>x.plat===tipo&&x.nom
 const IMP={};
 const iCnpjDono=dono=>{const t=cfg.cnpjs.find(c=>/tain/i.test(c.nome));if(/tain/i.test(dono)&&t)return t.id;return (cfg.cnpjs.find(c=>c.regime!=="mei")||cfg.cnpjs[0]).id};
 const iShort=c=>String(c.nome).replace(/\s*\(.*\)\s*/g,"").trim();
-function openImport(){IMP.data=null;$("ibody").innerHTML=`<label>Arquivo de vendas (.csv)<input type="file" id="ifile" accept=".csv,text/csv"></label><p class="hint" style="margin-top:8px">Exporte o relatório de vendas na Greenn, na Hotmart ou na Kiwify e escolha o arquivo aqui. Vendas que já foram importadas antes são puladas, então pode importar o mesmo período de novo sem duplicar.</p>`;$("ierr").textContent="";$("isave").hidden=true;$("iov").hidden=false}
+function openImport(){IMP.data=null;IMP.mode="csv";$("ititle").textContent="Importar vendas";$("ibody").innerHTML=`<label>Arquivo de vendas (.csv)<input type="file" id="ifile" accept=".csv,text/csv"></label><p class="hint" style="margin-top:8px">Exporte o relatório de vendas na Greenn, na Hotmart ou na Kiwify e escolha o arquivo aqui. Vendas que já foram importadas antes são puladas, então pode importar o mesmo período de novo sem duplicar.</p>`;$("ierr").textContent="";$("isave").hidden=true;$("iov").hidden=false}
 async function impRead(file){const buf=await file.arrayBuffer();let t=new TextDecoder("utf-8").decode(buf);if(t.includes("�"))t=new TextDecoder("windows-1252").decode(buf);return t}
 function impPlatOpts(){const D=IMP.data,c=cnpjOf(D.cnpj)||cfg.cnpjs[0];const ex=cfg.plats.filter(p=>p.nome.toLowerCase().startsWith(D.tipo.toLowerCase()));const novo=`${D.tipo} ${iShort(c)}`;
  const def=IMP.plat||(ex.find(p=>(contaOf(p.conta)||{}).cnpj===D.cnpj)||{}).nome||(cfg.plats.some(p=>p.nome===novo)?novo:"+");
@@ -525,13 +525,18 @@ function impRender(){const D=IMP.data;if(!D)return;const plat=$("iplat")?$("ipla
 /* vendas já importadas no mês: id → true se já está como reembolso */
 function impExisting(k){const m=new Map();for(const t of inMonth(k))if(t.k==="venda"&&t.ext){const R=new Set(t.extR||[]);for(const id of Object.keys(t.ext))m.set(id,R.has(id))}return m}
 $("ibody").addEventListener("change",async e=>{const x=e.target,D=IMP.data;$("ierr").textContent="";
+ if(x.id==="jfile"&&x.files[0]){try{const J=JSON.parse(await x.files[0].text());if(J.kind!=="emp-import"||!Array.isArray(J.txs))throw new Error("Este arquivo não é um arquivo de lançamentos preparado.");IMP.data=J;jRender()}catch(err){$("ierr").textContent=err.message.startsWith("Unexpected")?"Não consegui ler o arquivo.":err.message}return}
+ if(IMP.mode==="json")return;
  if(x.id==="ifile"&&x.files[0]){try{const p=impParse(await impRead(x.files[0]));IMP.data={...p,cnpj:iCnpjDono(p.dono),map:{},newc:{},sel:null,delman:false};IMP.plat="";impRender()}catch(err){$("ierr").textContent=err.message}return}
  if(!D)return;if(x.dataset.ip!=null)D.map[D.names[+x.dataset.ip]]=x.value;else if(x.dataset.ic!=null)D.newc[D.names[+x.dataset.ic]]=x.value;else if(x.dataset.im)D.sel[x.dataset.im]=x.checked;else if(x.id==="idelman")D.delman=x.checked;else if(x.id==="iplat")IMP.plat=x.value;impRender()});
 function closeImport(){$("iov").hidden=true;IMP.data=null}
 $("icancel").onclick=closeImport;$("iov").addEventListener("click",e=>{if(e.target===$("iov"))closeImport()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("iov").hidden)closeImport()});
 $("impbtn").onclick=openImport;
-$("isave").onclick=async()=>{const D=IMP.data,btn=$("isave");if(!D)return;btn.disabled=true;$("ierr").textContent="";try{
+$("jimpbtn").onclick=()=>openJsonImport();
+$("isave").onclick=async()=>{const D=IMP.data,btn=$("isave");if(!D)return;btn.disabled=true;$("ierr").textContent="";
+ if(IMP.mode==="json"){try{const r=await jSave();closeImport();toast(`${r.n} lançamentos importados${r.quit?`, ${r.quit} faturas antigas marcadas como pagas`:""}.`)}catch(err){$("ierr").textContent=err.message;btn.disabled=false}return}
+ try{
  /* 1. configuração: conta nova na plataforma, produtos novos e o que cada nome significa */
  let plat=$("iplat").value;const c=cnpjOf(D.cnpj)||cfg.cnpjs[0];
  if(plat==="+"){plat=`${D.tipo} ${iShort(c)}`;const tx=IMP_TAXA[D.tipo]||{pct:0,fixo:0};if(!contaOf(plat))cfg.contas.push({nome:plat,tipo:"plataforma",cnpj:c.id,ini:0});cfg.plats.push({nome:plat,pct:tx.pct,fixo:tx.fixo,conta:plat})}
@@ -556,6 +561,30 @@ $("isave").onclick=async()=>{const D=IMP.data,btn=$("isave");if(!D)return;btn.di
  setFirstK();closeImport();render();
  toast(`${novas} ${novas!==1?"vendas importadas":"venda importada"}${reembs?`, ${reembs} com reembolso`:""}${apag?`. ${apag} ${apag>1?"lançamentos feitos à mão foram apagados":"lançamento feito à mão foi apagado"}`:""}.`)
 }catch(err){$("ierr").textContent=err.message;btn.disabled=false}};
+
+/* ---------- importar lançamentos preparados (arquivo .json feito a partir de uma planilha) ---------- */
+function openJsonImport(){IMP.data=null;IMP.mode="json";$("ititle").textContent="Importar lançamentos preparados";$("ibody").innerHTML=`<label>Arquivo preparado (.json)<input type="file" id="jfile" accept=".json,application/json"></label><p class="hint" style="margin-top:8px">Arquivo com gastos, anúncios, transferências e rendimentos já no formato do app (por exemplo, a planilha antiga convertida). Nada é gravado antes de você conferir o resumo. Lançamentos que já estão no app são pulados.</p>`;$("ierr").textContent="";$("isave").hidden=true;$("iov").hidden=false}
+function jResolve(t,J){const o={...t};const al=J.contaAlias||{};const fixC=n=>contaOf(n)?n:(al[n]&&contaOf(al[n])?al[n]:n);
+ if(o.pag&&o.pag.startsWith("conta:"))o.pag="conta:"+fixC(o.pag.slice(6));
+ if(o.k==="transf"){o.de=fixC(o.de);o.para=fixC(o.para)}if(o.k==="rec"||o.k==="ajuste")o.conta=fixC(o.conta);
+ if(o.prod&&!prodOf(o.prod))o.prod="";if(o.k==="ads"&&!adOf(o.conta)){const p=prodOf(o.prod);const a=cfg.ads.find(x=>x.cnpj===(p?p.cnpj:"ft"))||cfg.ads[0];o.conta=a?a.id:o.conta}
+ if(o.cnpj&&!cnpjOf(o.cnpj))o.cnpj=cfg.cnpjs[0].id;return o}
+function jRender(){const J=IMP.data;const have=new Set(all().map(t=>t.id));const byM={};
+ for(const t of J.txs){const k=t.data.slice(0,7);const o=byM[k]=byM[k]||{desp:0,ads:0,transf:0,rec:0,n:0,dup:0};if(have.has(t.id)){o.dup++;continue}o.n++;if(t.k==="ads")o.ads+=+t.cobrado||0;else if(t.k in o)o[t.k]+=+t.valor||0}
+ const ks=Object.keys(byM).sort();const tot=ks.reduce((a,k)=>a+byM[k].n,0);const newCards=(J.cards||[]).filter(c=>!cardOf(c.nome));
+ $("ibody").innerHTML=`<div class="box" style="margin-top:0"><b>${esc(J.titulo||"Lançamentos")}</b><br><small class="hint">${J.txs.length} lançamentos no arquivo${tot<J.txs.length?` · ${J.txs.length-tot} já estão no app`:""}</small></div>
+ ${newCards.length?`<p class="hint" style="margin-top:12px">Cartões que serão criados: ${newCards.map(c=>`<b>${esc(c.nome)}</b> (fecha dia ${c.fecha}, vence dia ${c.vence})`).join(", ")}. Confira as datas depois em Configurar.</p>`:""}
+ <div class="tscroll" style="margin-top:12px"><table><tr><th>Mês</th><th class="n">Despesas</th><th class="n">Anúncios</th><th class="n">Transferências</th><th class="n">Rendimentos</th></tr>${ks.map(k=>{const o=byM[k];return `<tr><td>${cap(kName(k,{month:"short",year:"numeric"}))}${o.dup?`<span class="badge mute">${o.dup} já no app</span>`:""}</td><td class="n">${M(o.desp)}</td><td class="n">${M(o.ads)}</td><td class="n">${M(o.transf)}</td><td class="n">${o.rec?M(o.rec):"–"}</td></tr>`}).join("")}</table></div>
+ ${J.quitarAte?`<p class="hint" style="margin-top:12px">As faturas de cartão que vencem até ${dShort(J.quitarAte)}/${J.quitarAte.slice(0,4)} serão marcadas como pagas, porque já foram pagas.</p>`:""}`;
+ $("isave").hidden=false;$("isave").disabled=!tot;$("isave").textContent=tot?`Importar ${tot} lançamentos`:"Nada novo para importar"}
+async function jSave(){const J=IMP.data;
+ const newCards=(J.cards||[]).filter(c=>!cardOf(c.nome));if(newCards.length){cfg.cards.push(...newCards.map(c=>({nome:c.nome,fecha:+c.fecha||1,vence:+c.vence||10,conta:contaOf(c.conta)?c.conta:(cfg.contas.find(x=>x.tipo==="banco")||{}).nome||""})));await saveCfg()}
+ const have=new Set(all().map(t=>t.id));const list=J.txs.filter(t=>!have.has(t.id)).map(t=>jResolve(t,J));
+ const byK={};for(const t of list)(byK[t.data.slice(0,7)]=byK[t.data.slice(0,7)]||[]).push(t);
+ for(const [k,ts] of Object.entries(byK)){const ids=new Set(ts.map(t=>t.id));const r=await mutate("emp-m-"+k,b=>({kind:"emp-month",txs:((b&&b.txs)||[]).filter(t=>!ids.has(t.id)).concat(ts)}));months[k]=r.body.txs}
+ setFirstK();let quit=0;
+ if(J.quitarAte){const f0=fc;fc="";const pf=faturas().filter(f=>!f.quit&&f.due<=J.quitarAte).map(f=>{const c=cardOf(f.card)||{};return {id:"pf-"+f.card+"-"+f.due,k:"pagfat",card:f.card,due:f.due,valor:r2(f.total-f.pago),pag:"conta:"+(c.conta||"Nubank PJ"),data:f.due,obs:"Fatura antiga, paga antes do app"}});fc=f0;if(pf.length){await saveTxs(pf);quit=pf.length}}
+ render();return {n:list.length,quit}}
 
 /* ---------- configurar ---------- */
 const CFG_UI=[
