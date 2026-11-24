@@ -11,7 +11,7 @@ Converse sempre em **português**. O Oseias não é programador. Explique o que 
 - **Supabase pessoal** do Oseias. URL e chave publishable estão no topo do `<script>` de cada página.
 - Tudo fica numa tabela `docs`, com as colunas `user_id`, `key`, `body` (jsonb), `rev` e `updated_at`, e RLS por usuário. Cada documento é um JSON.
 - O login é feito com e-mail e senha (`signInWithPassword`). Os cadastros novos estão travados. Ele e a esposa (Tainá) usam o mesmo login, às vezes ao mesmo tempo. Por isso **toda gravação precisa ler o `rev` atual, aplicar a mudança e gravar com `.eq("rev", rev)`, tentando de novo em caso de conflito**. Nunca sobrescreva às cegas.
-- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v2`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
+- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v12`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
 - PWA: `manifest.webmanifest`, `icon.svg`, `icon-192.png`.
 - Tudo é HTML, CSS e JS num arquivo só por página, sem build e sem framework. Mantenha assim.
 - Para testar sem Supabase, `empresa.html?demo` usa localStorage (chaves `demo-emp-*`).
@@ -28,22 +28,22 @@ Converse sempre em **português**. O Oseias não é programador. Explique o que 
 ## Lado Pessoal (`index.html`)
 - Contas: MP Oseias, MP Tainá, cofrinhos (Olívia, Mary Kay, Projetos Tainá) e Caixa Preta (dinheiro físico).
 - Ele gosta de deixar previsões de gastos recorrentes nos meses futuros, que vão sendo abatidas pelos gastos reais.
-- O pró-labore da FarmaTécnica cai na conta **MP Oseias**.
+- O pró-labore da InfoPro Digital cai na conta **MP Oseias**.
 - O menu tem o link `Empresa ↗` apontando para `empresa.html`.
 
 ## Lado Empresa (`empresa.html`)
 
 ### Negócio
 Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas e checkout.
-- **FarmaTécnica**: ME no **Simples Nacional** (CNPJ do Oseias). Produtos: Manual de Fórmulas FarmaTécnica e Documentos Operacionais FarmaTécnica (principais); Dominando os Cálculos na Manipulação Magistral, Guia de Preparação para Fiscalização Sanitária, Guia de Excipientes para Cápsulas e RDC 1000 Descomplicada (order bumps, mas às vezes ele faz tráfego direto para eles).
+- **InfoPro Digital**: ME no **Simples Nacional** (CNPJ do Oseias). A empresa se chama InfoPro Digital; “FarmaTécnica” é só a marca de alguns produtos (não use como nome da empresa, categoria ou conta). Produtos: Manual de Fórmulas FarmaTécnica e Documentos Operacionais FarmaTécnica (principais); Dominando os Cálculos na Manipulação Magistral, Guia de Preparação para Fiscalização Sanitária, Guia de Excipientes para Cápsulas e RDC 1000 Descomplicada (order bumps, mas às vezes ele faz tráfego direto para eles).
 - **Tainá (MEI)**: produto Flex, pausado, com vendas esporádicas e planos de retomar. DAS MEI fixo de R$ 86 por mês. Vende pela Hotmart, e o dinheiro cai na conta MP Tainá.
 - **Testes de produto**: de vez em quando ele testa produtos novos (ex.: Cardápio de Páscoa, pela Kiwify). No app são produtos com `status: "teste"`, mostrados à parte no painel.
 - Ele preferiu tudo junto num app só, **separado por CNPJ** (filtro no topo).
 
 ### Plataformas, contas e cartões
-- Greenn: taxa de **4,99% + R$ 1,00 por venda**. Checkout principal da FarmaTécnica.
+- Greenn: taxa de **4,99% + R$ 1,00 por venda**. Checkout principal da InfoPro Digital.
 - Hotmart: **9,9% + R$ 2,49**. Kiwify: **8,99% + R$ 2,49** (em vendas baratas, abaixo de uns R$ 20, a Kiwify não cobra o fixo). Conferido nos relatórios de vendas em 24/11/2026.
-- Ele tem conta na Hotmart e na Kiwify tanto no nome dele (FarmaTécnica) quanto no da Tainá. A Kiwify do Oseias também vende produtos da Tainá (Guia de Alongamento, SouFlex).
+- Ele tem conta na Hotmart e na Kiwify tanto no nome dele (InfoPro Digital) quanto no da Tainá. A Kiwify do Oseias também vende produtos da Tainá (Guia de Alongamento, SouFlex).
 - Contas: **Nubank PJ** (recebe os saques das plataformas), Greenn, Hotmart, Kiwify (saldos dentro das plataformas) e MP Tainá.
 - Cartões de crédito: **Nubank PJ** (fecha dia 1, vence dia 8) e **Cora** (fecha dia 5, vence dia 10; **datas a confirmar**). Ele reveza entre os dois para pagar a Meta.
 
@@ -66,7 +66,7 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 - `pag` vem como `"card:Nome"` ou `"conta:Nome"`. Contas e cartões são referenciados pelo nome; produtos, CNPJs e contas de anúncio, pelo id.
 
 ### Telas
-Painel (resultado do mês, impostos escondidos, tráfego real com ROAS real e ROAS mínimo, vencimentos, saldos, testes, ano), Lançamentos, Produtos, Contas e cartões (saldos, faturas, pagar fatura, ajustar saldo), Impostos e Configurar.
+Painel (resultado do mês, impostos escondidos, tráfego real com ROAS real e ROAS mínimo, vencimentos, saldos, testes, ano), Lançamentos (com totais no topo: quantidade, entradas = vendas líquidas + outras entradas, saídas = anúncios + despesas; saques, faturas pagas e ajustes ficam fora), Produtos, Contas e cartões (saldos, faturas, pagar fatura, ajustar saldo), Impostos e Configurar.
 
 ### Resultado do mês (DRE)
 Faturamento bruto − reembolsos − taxas das plataformas − taxas de saque − DAS previsto = **receita líquida**; − anúncios (mídia + impostos + IOF) − outros canais de tráfego = **margem de contribuição**; − estrutura fixa = **lucro operacional**; + outras entradas − pró-labore − INSS = **sobra na empresa**. A categoria "DAS (pagamento)" não entra no DRE, porque o DAS já foi previsto por competência.
