@@ -11,7 +11,7 @@ Converse sempre em **português**. O Oseias não é programador. Explique o que 
 - **Supabase pessoal** do Oseias. URL e chave publishable estão no topo do `<script>` de cada página.
 - Tudo fica numa tabela `docs`, com as colunas `user_id`, `key`, `body` (jsonb), `rev` e `updated_at`, e RLS por usuário. Cada documento é um JSON.
 - O login é feito com e-mail e senha (`signInWithPassword`). Os cadastros novos estão travados. Ele e a esposa (Tainá) usam o mesmo login, às vezes ao mesmo tempo. Por isso **toda gravação precisa ler o `rev` atual, aplicar a mudança e gravar com `.eq("rev", rev)`, tentando de novo em caso de conflito**. Nunca sobrescreva às cegas.
-- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v15`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
+- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v17`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
 - PWA: `manifest.webmanifest`, `icon.svg`, `icon-192.png`.
 - Tudo é HTML, CSS e JS num arquivo só por página, sem build e sem framework. Mantenha assim.
 - Para testar sem Supabase, `empresa.html?demo` usa localStorage (chaves `demo-emp-*`).
@@ -51,7 +51,7 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 - Contas de anúncio **em real**: desde jan/2026 a Meta repassa PIS/Cofins (9,25%) e ISS (2,9%). Do valor cobrado no cartão, **12,15% são impostos** (R$ 100 de mídia viram R$ 113,83 cobrados).
 - Contas **em dólar** (são duas, as que menos gastam): +**3,5% de IOF** sobre o valor convertido. Ele pensa em migrar contas para dólar mais para frente.
 - Ferramentas pagas em dólar (ex.: Claude): +3,5% de IOF, marcado como "compra internacional".
-- DAS do Simples: calculado pela alíquota efetiva (Anexo III, ou V), com base no faturamento bruto dos 12 meses anteriores (RBT12). Existe a opção de "alíquota fixa %" em Configurar. Vence dia 20 do mês seguinte. **Pendente:** na planilha antiga o DAS pago era bem menor que 6% do faturamento. Ele vai confirmar com o contador a alíquota e a base de cálculo.
+- DAS do Simples: a InfoPro está no **Anexo II** (conferido nas guias de set e out/2026: a guia só traz IRPJ, CSLL, Cofins, PIS e CPP, sem IPI e ICMS, que é 60,5% do DAS cheio; na faixa 1 dá 2,72% do faturamento). O app calcula pela alíquota efetiva do anexo (II, III ou V; no II multiplica por `SIMPLES_PARTE`), com base no faturamento bruto dos 12 meses anteriores (RBT12). Existe a opção de "alíquota fixa %" em Configurar. Vence dia 20 do mês seguinte. O INSS da guia separada (R$ 178,31) é os 11% descontados do pró-labore formal de R$ 1.621; a parte da empresa (CPP) já está dentro do DAS.
 
 ### Estrutura de dados (documentos na tabela `docs`)
 - `emp-cfg`: `{cnpjs, prods, plats, ads, contas, cards, fixas, imap}`. Os padrões estão em `DEF_CFG`. `imap` guarda `{plat, nome, prod}`: qual produto do app corresponde a cada nome de produto nos CSVs (`prod: "-"` = não importar).
@@ -79,3 +79,4 @@ Faturamento bruto − reembolsos − taxas das plataformas − taxas de saque �
 3. Ideia: o pró-labore pago no lado Empresa virar uma entrada automática na conta MP Oseias do lado Pessoal (requer escrever no formato de dados do `index.html`, com cuidado).
 4. Depois: avaliar a migração das contas de anúncio para dólar (comparar 12,15% de impostos com 3,5% de IOF + câmbio).
 5. Os meses antigos da planilha (2026) não foram importados. Ele disse que serviam só para entender o fluxo de gastos.
+6. Auditoria de 24/11/2026: o controle completo da Empresa começa em **dez/2025**. As vendas de 2021 a nov/2025 foram retiradas a pedido dele (sem custos lançados, mostravam lucro falso). Os saldos de 30/11/2025 ficaram como ajustes `saldoini-*` em 01/12/2025. Cópia de tudo na tabela `docs`, key `backup-emp-2026-11-24-auditoria`. Imposto da Meta (12,15%) só vale para cobranças a partir de `META_IMP_DESDE` (2026-01-01). DAS lançado como pendente (`pago:false`) não conta como pago. Despesas fixas: só as que saem da conta (contadora, INSS, DAS MEI); as de cartão vêm das faturas.
