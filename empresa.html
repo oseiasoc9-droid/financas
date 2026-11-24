@@ -47,7 +47,7 @@ h3{font-size:15px;margin:16px 0 6px}
 .grid2>.panel{margin-bottom:0}
 .grid2{margin-bottom:18px}
 @media (max-width:860px){.grid2{grid-template-columns:1fr}.month span{min-width:120px}}
-@media (max-width:700px){header{position:static}nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}nav a{white-space:nowrap}.month{margin-right:auto}}
+@media (max-width:700px){header{position:static}nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}nav a{white-space:nowrap;flex:none}.month{margin-right:auto}}
 .figs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0}
 @media (max-width:980px){.figs{grid-template-columns:repeat(2,1fr)}}
 .fig{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
@@ -74,6 +74,20 @@ td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dre tr.tot td{font-weight:700;border-bottom:1px solid var(--line);padding-top:10px}
 .dre tr.sub td:first-child{padding-left:18px;color:var(--mute)}
 .dre tr.res td{font-weight:700;font-size:17px}
+.phead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}.phead .month span{min-width:70px}
+.figs.g4{grid-template-columns:repeat(4,1fr)}@media (max-width:980px){.figs.g4{grid-template-columns:repeat(2,1fr)}}
+:root{--cin:#2a8fd8;--cout:#f0527f}[data-theme=light]{--cin:#0a6fc2;--cout:#d6336c}
+.leg{display:flex;gap:16px;font-size:13px;color:var(--mute);margin:-4px 0 6px}.leg span{display:inline-flex;align-items:center;gap:6px}.sw{width:10px;height:10px;border-radius:3px;display:inline-block}.sw.cin{background:var(--cin)}.sw.cout{background:var(--cout)}
+.chart{position:relative}.chart svg{display:block;width:100%;height:auto;overflow:visible}.chart text{fill:var(--mute);font-size:11px;font-family:inherit}.chart .gl{stroke:var(--line);stroke-width:1}.chart .z{stroke:var(--mute);stroke-width:1;opacity:.6}
+.chart .bi{fill:var(--cin)}.chart .bo{fill:var(--cout)}.chart .hit{fill:transparent;cursor:pointer}.chart .hit:hover,.chart .hit.on{fill:rgba(143,211,255,.07)}.chart .ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}.chart .dot{fill:var(--ink);stroke:var(--panel);stroke-width:2}.chart .dot.neg{fill:var(--pink)}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;white-space:nowrap;transform:translate(-50%,-100%);z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.25)}.tip b{display:block;font-size:13px;margin-bottom:2px}.tip div{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media (max-width:980px){.mgrid{grid-template-columns:repeat(3,1fr)}}@media (max-width:620px){.mgrid{grid-template-columns:repeat(2,1fr)}}
+.mc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:none;text-align:left;width:100%}.mc:hover{border-color:var(--mute)}.mc.vazio{opacity:.55}
+.mc small{display:block;color:var(--mute);font-size:13px;font-weight:600}.mc small .badge{margin-left:6px}.mc b{display:block;font-weight:300;font-size:clamp(19px,2vw,24px);line-height:1.25;margin:3px 0;white-space:nowrap;font-variant-numeric:tabular-nums}.mc em{display:block;font-style:normal;color:var(--mute);font-size:12px;line-height:1.45}
+.tip[hidden]{display:none}
+#pnt td,#pnt th,#pngt td,#pngt th{white-space:nowrap}
+.dreano td,.dreano th{padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}.dreano tr>:first-child{position:sticky;left:0;background:var(--panel);z-index:1;min-width:190px}@media (max-width:620px){.dreano tr>:first-child{min-width:0;max-width:150px;white-space:normal;line-height:1.3}}
+.dreano tr.tot td{font-weight:700}.dreano tr.sub td:first-child{padding-left:18px;color:var(--mute)}.dreano tr.ind td{color:var(--mute);font-size:13px}.dreano tr.ind td:first-child{padding-left:18px}.dreano tr.sec td{color:var(--mute);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding-top:16px}.dreano th.tc,.dreano td.tc{border-left:1px solid var(--line)}.dreano th[data-k]{cursor:pointer}.dreano th.fut{opacity:.6}
 .rowc{cursor:pointer}.rowc:hover td{background:rgba(143,211,255,.05)}
 .empty{color:var(--mute);font-size:14px;padding:6px 0}
 .big{font-weight:300;font-size:30px;line-height:1.2}
@@ -250,7 +264,7 @@ return api})();
 <body>
 <header><div class="wrap bar">
   <div class="brand"><span>Minhas Finanças</span><small>Empresa</small><button type="button" class="tbtn" id="tema" aria-label="Mudar tema">☀️</button></div>
-  <nav><a href="#painel">Painel</a><a href="#lancamentos">Lançamentos</a><a href="#produtos">Produtos</a><a href="#contas">Contas e cartões</a><a href="#impostos">Impostos</a><a href="#config">Configurar</a><a href="./" class="out">Pessoal ↗</a></nav>
+  <nav><a href="#painel">Painel</a><a href="#panorama">Panorama</a><a href="#lancamentos">Lançamentos</a><a href="#produtos">Produtos</a><a href="#contas">Contas e cartões</a><a href="#impostos">Impostos</a><a href="#config">Configurar</a><a href="./" class="out">Pessoal ↗</a></nav>
   <div class="month"><button class="btn ico" id="prev" aria-label="Mês anterior">‹</button><span id="mlabel"></span><button class="btn ico" id="next" aria-label="Próximo mês">›</button></div>
   <button class="btn pri" id="add">+ Lançar</button>
 </div></header>
@@ -280,6 +294,19 @@ return api})();
   </div>
   <div class="panel" id="testp" hidden><h2>Testes de produto</h2><p class="hint">Produtos marcados como teste ficam separados aqui para você ver se valeu a pena.</p><div id="tests"></div></div>
   <div class="panel"><h2 id="anoh">O ano</h2><p class="hint">Mês a mês, pelo regime de competência (vendas e gastos no mês em que aconteceram).</p><div class="tscroll"><table id="ano"></table></div></div>
+</section>
+
+<section id="panorama" hidden>
+  <div class="phead"><h1 id="pnh">Panorama</h1><div class="month"><button class="btn ico" id="pyp" aria-label="Ano anterior">‹</button><span id="pyl"></span><button class="btn ico" id="pyn" aria-label="Próximo ano">›</button></div></div>
+  <p class="sub" id="pns"></p>
+  <div class="figs" id="pnf"></div>
+  <div class="grid2">
+    <div class="panel"><h2>Entrou e saiu, mês a mês</h2><p class="hint">Entradas são as vendas e outras entradas. Saídas são tudo o que a empresa gastou: taxas, DAS, anúncios, estrutura e pró-labore. Toque numa coluna para ver os valores.</p><div class="leg"><span><i class="sw cin"></i>Entradas</span><span><i class="sw cout"></i>Saídas</span></div><div class="chart" id="pnc1"></div></div>
+    <div class="panel"><h2>Sobra acumulada no ano</h2><p class="hint" id="pnc2h">Quanto a empresa já guardou no ano, somando a sobra de cada mês.</p><div class="chart" id="pnc2"></div></div>
+  </div>
+  <div class="panel"><h2>Cada mês</h2><p class="hint">Toque num mês para abrir o resultado completo dele no Painel.</p><div class="mgrid" id="pnm"></div></div>
+  <div class="panel"><div class="phead"><h2 id="pnth">DRE gerencial do ano</h2><div class="seg" id="pnv"><button data-v="dre" aria-pressed="true">Resultado</button><button data-v="caixa" aria-pressed="false">Fluxo de caixa</button></div></div><p class="hint" id="pnthint" style="margin-top:6px"></p><div class="tscroll"><table class="dreano" id="pnt"></table></div></div>
+  <div class="panel"><h2>Total geral até aqui</h2><p class="hint" id="pngh"></p><div class="figs g4" id="pngf"></div><div class="tscroll"><table id="pngt"></table></div></div>
 </section>
 
 <section id="lancamentos" hidden>
@@ -501,7 +528,7 @@ function vtag(d){const n=dDiff(d);return n<0?`<span class="badge over">atrasado 
 /* ---------- render ---------- */
 function render(){$("mlabel").textContent=cap(kName(curK()));renderCnpjF();const h=(location.hash||"#painel").slice(1);
  for(const s of document.querySelectorAll("main section"))s.hidden=s.id!==h;for(const a of document.querySelectorAll("nav a"))a.toggleAttribute("aria-current",a.getAttribute("href")==="#"+h),a.getAttribute("href")==="#"+h&&a.setAttribute("aria-current","page");
- ({painel:renderPainel,lancamentos:renderList,produtos:renderProds,contas:renderContas,impostos:renderImp,config:renderCfg}[h]||renderPainel)()}
+ ({painel:renderPainel,panorama:renderPanorama,lancamentos:renderList,produtos:renderProds,contas:renderContas,impostos:renderImp,config:renderCfg}[h]||renderPainel)()}
 function renderCnpjF(){$("cnpjf").innerHTML=`<div class="seg" role="group" aria-label="Empresa">${[["","Todas"]].concat(cfg.cnpjs.map(c=>[c.id,c.nome])).map(([v,l])=>`<button data-c="${esc(v)}" aria-pressed="${fc===v}">${esc(l)}</button>`).join("")}</div>`}
 $("cnpjf").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;fc=b.dataset.c;render()});
 
@@ -524,6 +551,101 @@ function renderTests(k){const tp=cfg.prods.filter(p=>p.status==="teste"&&(!fc||p
 function renderAno(){const y=cur.y;$("anoh").textContent=`O ano de ${y}`;let tot={fat:0,recLiq:0,trafT:0,margem:0,estrT:0,lucroOp:0,res:0};const rows=[];for(let i=0;i<12;i++){const k=ym(y,i);if(!(months[k]&&months[k].length)&&k!==curK())continue;const R=calc(k);for(const x in tot)tot[x]+=R[x];rows.push(`<tr class="rowc" data-k="${k}"><td>${cap(kName(k,{month:"long"}))}${k===nowK?`<span class="badge info">agora</span>`:""}</td><td class="n in">${M(R.fat)}</td><td class="n">${M(R.trafT)}</td><td class="n">${M(R.margem)}</td><td class="n">${M(R.estrT)}</td><td class="n ${R.res>=0?"okc":"out"}">${M(R.res)}</td></tr>`)}
  $("ano").innerHTML=`<tr><th>Mês</th><th class="n">Faturamento</th><th class="n">Tráfego real</th><th class="n">Margem</th><th class="n">Estrutura</th><th class="n">Sobra</th></tr>`+rows.join("")+`<tr class="tot"><td><b>Total</b></td><td class="n in"><b>${M(tot.fat)}</b></td><td class="n"><b>${M(tot.trafT)}</b></td><td class="n"><b>${M(tot.margem)}</b></td><td class="n"><b>${M(tot.estrT)}</b></td><td class="n ${tot.res>=0?"okc":"out"}"><b>${M(tot.res)}</b></td></tr>`}
 $("ano").addEventListener("click",e=>{const r=e.target.closest("[data-k]");if(!r)return;cur={y:+r.dataset.k.slice(0,4),m:+r.dataset.k.slice(5,7)-1};render();scrollTo({top:0,behavior:"smooth"})});
+/* ---------- panorama: o ano inteiro e o total desde o início (competência, como o Painel) ---------- */
+const hasData=k=>!!(months[k]&&months[k].some(pass));
+function pnMonth(k){const R=calc(k);const ent=R.fat+R.outras;return {k,R,tem:hasData(k),ent,sai:r2(ent-R.res),custos:R.reemb+R.taxa+R.saque+R.das,socios:R.prol+R.inss}}
+const Mk=v=>{const a=Math.abs(v),s=v<0?"−":"";return a>=1e6?`${s}${(a/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1})} mi`:a>=1e3?`${s}${(a/1e3).toLocaleString("pt-BR",{maximumFractionDigits:1})} mil`:`${s}${Math.round(a)}`};
+function niceMax(v){if(v<=0)return 100;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function pnSum(L){const t={fat:0,outras:0,custos:0,trafT:0,estrT:0,socios:0,res:0,ent:0,sai:0,hidden:0,adsTot:0};for(const x of L){t.fat+=x.R.fat;t.outras+=x.R.outras;t.custos+=x.custos;t.trafT+=x.R.trafT;t.estrT+=x.R.estrT;t.socios+=x.socios;t.res+=x.R.res;t.ent+=x.ent;t.sai+=x.sai;t.hidden+=x.R.hidden;t.adsTot+=x.R.adsTot}return t}
+function pnTip(box,x,y,html){let t=box.querySelector(".tip");if(!t){t=document.createElement("div");t.className="tip";box.appendChild(t)}t.innerHTML=html;t.hidden=false;const w=box.clientWidth;t.style.left=Math.min(Math.max(x,t.offsetWidth/2),w-t.offsetWidth/2)+"px";t.style.top=(y-8)+"px"}
+function pnTipOff(box){const t=box.querySelector(".tip");if(t)t.hidden=true;box.querySelectorAll(".hit.on").forEach(h=>h.classList.remove("on"))}
+const mAbbr=k=>cap(kName(k,{month:"short"}));
+/* gráfico 1: colunas de entradas e saídas */
+function pnBars(L,W){const H=240,pl=44,pr=6,pt=10,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12,bw=Math.min(18,gw*.3);
+ const mx=niceMax(Math.max(...L.map(x=>Math.max(x.ent,x.sai)),0)),y=v=>pt+ih-Math.max(0,v)/mx*ih;let g="";
+ for(let i=0;i<=4;i++){const v=mx*i/4,yy=y(v);g+=`<line class="${i?"gl":"z"}" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${Mk(v)}</text>`}
+ const bar=(x,v,c)=>{const h=Math.max(0,v)/mx*ih;if(h<.5)return "";const r=Math.min(4,h,bw/2),top=pt+ih-h;return `<path class="${c}" d="M${x},${pt+ih}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${pt+ih}Z"/>`};
+ L.forEach((m,i)=>{const cx=pl+gw*i+gw/2;g+=bar(cx-bw-1,m.ent,"bi")+bar(cx+1,m.sai,"bo")+`<text x="${cx}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text><rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
+ return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas de cada mês">${g}</svg>`}
+/* gráfico 2: linha da sobra acumulada */
+function pnLine(L,W){const H=240,pl=44,pr=10,pt=12,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12;const pts=[];let acc=0;L.forEach((m,i)=>{acc+=m.R.res;if(m.tem||m.k<=nowK)pts.push([i,acc])});
+ const vs=pts.map(p=>p[1]).concat(0);let lo=Math.min(...vs),hi=Math.max(...vs);const span=niceMax(Math.max(hi-lo,1)/4);lo=Math.floor(lo/span)*span;hi=Math.max(lo+span,Math.ceil(hi/span)*span);const y=v=>pt+ih-(v-lo)/(hi-lo)*ih;let g="";
+ for(let v=lo;v<=hi+span/2;v+=span){const yy=y(v);g+=`<line class="${Math.abs(v)<1e-9?"z":"gl"}" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${Mk(v)}</text>`}
+ L.forEach((m,i)=>{g+=`<text x="${pl+gw*i+gw/2}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text>`});
+ if(pts.length){g+=`<path class="ln" d="${pts.map((p,j)=>`${j?"L":"M"}${pl+gw*p[0]+gw/2},${y(p[1])}`).join("")}"/>`;g+=pts.map(p=>`<circle class="dot ${p[1]<0?"neg":""}" cx="${pl+gw*p[0]+gw/2}" cy="${y(p[1])}" r="4"/>`).join("")}
+ L.forEach((m,i)=>{g+=`<rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
+ return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sobra acumulada ao longo do ano">${g}</svg>`}
+let PN=null;
+const pnW=id=>Math.max(300,Math.round($(id).clientWidth||720));
+function pnCharts(){if(!PN)return;$("pnc1").innerHTML=pnBars(PN.L,pnW("pnc1"));$("pnc2").innerHTML=pnLine(PN.L,pnW("pnc2"))}
+let pnRT=null;addEventListener("resize",()=>{clearTimeout(pnRT);pnRT=setTimeout(()=>{if(!$("panorama").hidden)pnCharts()},150)});
+function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa";$("pyl").textContent=y;
+ const L=Array.from({length:12},(_,i)=>pnMonth(ym(y,i))),feitos=L.filter(m=>m.tem),T=pnSum(feitos);PN={L};
+ let acc=0;const accs=L.map(m=>acc+=m.R.res);
+ $("pnh").textContent=`Panorama de ${y}`;
+ $("pns").innerHTML=feitos.length?`${esc(nome)} ${T.res>=0?"sobrou":"ficou no vermelho em"} <b class="${T.res>=0?"okc":"out"}">${M(Math.abs(T.res))}</b> em ${y}, com ${feitos.length} ${feitos.length>1?"meses lançados":"mês lançado"}. Tudo pelo mês em que a venda ou o gasto aconteceu, igual ao Painel.`:`Nenhum lançamento em ${y}${fc?" para esta empresa":""}.`;
+ const fig=(l,v,e,c="")=>`<div class="fig"><small>${l}</small><b class="${c}">${v}</b><em>${e}</em></div>`;
+ $("pnf").innerHTML=fig("Faturamento no ano",M(T.fat),feitos.length?`média de ${M(T.fat/feitos.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(T.trafT),T.fat?`${pc(T.trafT/T.fat)} do faturamento`:"custo real, com impostos")+fig("Estrutura e pró-labore",M(T.estrT+T.socios),`estrutura ${M(T.estrT)} · pró-labore ${M(T.socios)}`)+fig("Impostos e taxas",M(T.hidden),T.fat?`${pc(T.hidden/T.fat)} do faturamento`:"tudo somado","amb")+fig("Sobra no ano",M(T.res),T.fat?`${pc(T.res/T.fat)} do faturamento`:"depois de tudo",T.res>=0?"okc":"out");
+ pnCharts();
+ const best=feitos.length?feitos.reduce((a,b)=>b.R.res>a.R.res?b:a):null;
+ $("pnm").innerHTML=L.map((m,i)=>{const fut=m.k>nowK;const tag=m.k===nowK?`<span class="badge info">agora</span>`:!m.tem?"":fut?`<span class="badge mute">previsto</span>`:m.R.res>=0?(best===m&&feitos.length>1?`<span class="badge ok">melhor mês</span>`:`<span class="badge ok">sobrou</span>`):`<span class="badge over">faltou</span>`;
+  return `<button type="button" class="mc ${m.tem?"":"vazio"}" data-k="${m.k}"><small>${cap(kName(m.k,{month:"long"}))}${tag}</small><b class="${!m.tem?"":m.R.res>=0?"okc":"out"}">${m.tem?M(m.R.res):"–"}</b><em>${m.tem?`entrou ${M(m.ent)}<br>saiu ${M(m.sai)}${m.R.adsTot?` · anúncio ${Mk(m.R.trafT)}`:""}`:"sem lançamentos"}</em></button>`}).join("");
+ pnTable(L,T,feitos);
+ /* total geral: todos os meses com lançamento, até o mês atual */
+ const ks=Object.keys(months).filter(k=>k<=nowK&&hasData(k)).sort(),G=ks.map(pnMonth),TG=pnSum(G),anos=[...new Set(ks.map(k=>k.slice(0,4)))];
+ const gb=G.length?G.reduce((a,b)=>b.R.res>a.R.res?b:a):null,gw=G.length?G.reduce((a,b)=>b.R.res<a.R.res?b:a):null;
+ $("pngh").textContent=G.length?`Tudo o que foi lançado, de ${kName(ks[0])} até ${kName(ks[ks.length-1])} (${G.length} ${G.length>1?"meses":"mês"}). Meses futuros ficam de fora.`:"Ainda não há meses lançados.";
+ $("pngf").innerHTML=fig("Faturamento total",M(TG.fat),G.length?`média de ${M(TG.fat/G.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(TG.trafT),TG.fat?`${pc(TG.trafT/TG.fat)} do faturamento`:"–")+fig("Sobra total",M(TG.res),G.length?`média de ${M(TG.res/G.length)} por mês`:"–",TG.res>=0?"okc":"out")+fig("Melhor mês",gb?M(gb.R.res):"–",gb?`${kName(gb.k,{month:"long",year:"numeric"})}. Pior: ${kName(gw.k,{month:"short",year:"numeric"})}, ${M(gw.R.res)}`:"–",gb&&gb.R.res<0?"out":"okc");
+ $("pngt").innerHTML=G.length?`<tr><th>Ano</th><th class="n">Meses</th><th class="n">Faturamento</th><th class="n">Anúncios e tráfego</th><th class="n">Impostos e taxas</th><th class="n">Estrutura e pró-labore</th><th class="n">Sobra</th></tr>`+anos.map(a=>{const S=pnSum(G.filter(m=>m.k.startsWith(a))),n=G.filter(m=>m.k.startsWith(a)).length;return `<tr class="rowc" data-y="${a}"><td>${a}</td><td class="n">${n}</td><td class="n in">${M(S.fat)}</td><td class="n">${M(S.trafT)}</td><td class="n">${M(S.hidden)}</td><td class="n">${M(S.estrT+S.socios)}</td><td class="n ${S.res>=0?"okc":"out"}">${M(S.res)}</td></tr>`}).join("")+`<tr class="tot"><td><b>Total geral</b></td><td class="n"><b>${G.length}</b></td><td class="n in"><b>${M(TG.fat)}</b></td><td class="n"><b>${M(TG.trafT)}</b></td><td class="n"><b>${M(TG.hidden)}</b></td><td class="n"><b>${M(TG.estrT+TG.socios)}</b></td><td class="n ${TG.res>=0?"okc":"out"}"><b>${M(TG.res)}</b></td></tr>`:""}
+/* fluxo de caixa: quando o dinheiro entra e sai de verdade. Vendas pela data da venda (líquidas, na plataforma); compras no cartão pelo vencimento da fatura; o resto pela data. Saques entre contas da empresa não contam. */
+function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:0,cartao:0,conta:0,saque:0};
+ for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}
+  else if(t.k==="ads"||t.k==="desp"){const c=pagCard(t);if(c)k=txDue(c,t).slice(0,7);if(C[k])C[k][c?"cartao":"conta"]+=txVal(t)}}
+ for(const k in C){const x=C[k];x.ent=x.vendas+x.outras;x.sai=x.cartao+x.conta+x.saque;x.ger=x.ent-x.sai}return C}
+let pnView="dre";
+function pnTable(L,T,feitos){const y=cur.y;document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));
+ const head=`<tr><th></th>${L.map(m=>`<th class="n${m.k>nowK?" fut":""}" data-k="${m.k}">${mAbbr(m.k)}</th>`).join("")}<th class="n tc">Total</th>${pnView==="dre"?`<th class="n">% fat.</th>`:""}</tr>`;
+ const v=(x,neg)=>Math.abs(x)<0.005?"–":(neg?"− ":"")+M(x);
+ if(pnView==="dre"){$("pnth").textContent=`DRE gerencial de ${y}`;$("pnthint").textContent="O demonstrativo de resultado mês a mês, no formato que empresas e agências usam: cada venda e cada gasto no mês em que aconteceu (regime de competência). Mostra se a operação dá lucro. Toque no nome do mês para abrir o Painel dele.";
+  const P=x=>T.fat>0?`<td class="n">${pc(x/T.fat)}</td>`:"<td></td>";
+  const line=(l,f,cls="sub",neg=true,tot)=>{const t=L.reduce((a,m)=>a+(m.tem?f(m):0),0);return `<tr class="${cls}"><td>${l}</td>${L.map(m=>`<td class="n ${cls==="tot"&&m.tem?(f(m)>=0?"":"out"):""}">${m.tem?v(f(m),neg):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg)}</td>${P(t)}</tr>`};
+  const ind=(l,f,ft)=>`<tr class="ind"><td>${l}</td>${L.map(m=>`<td class="n">${m.tem?f(m.R,m):""}</td>`).join("")}<td class="n tc">${ft}</td><td></td></tr>`;
+  const S=feitos.reduce((a,m)=>{for(const k of ["reemb","taxa","saque","das","recLiq","midia","adsTot","traf2","margem","lucroOp","prol","inss","qtd"])a[k]=(a[k]||0)+m.R[k];return a},{});
+  $("pnt").innerHTML=head+line("Faturamento bruto",m=>m.R.fat,"tot",false)
+   +line("Reembolsos e chargebacks",m=>m.R.reemb)+line("Taxas das plataformas",m=>m.R.taxa)+line("Taxas de saque e antecipação",m=>m.R.saque)+line("DAS (imposto sobre a venda)",m=>m.R.das)
+   +line("= Receita líquida",m=>m.R.recLiq,"tot",false)
+   +line("Anúncios (custo real, com impostos e IOF)",m=>m.R.adsTot)+line("Outros canais de tráfego",m=>m.R.traf2)
+   +line("= Margem de contribuição",m=>m.R.margem,"tot",false)
+   +line("Estrutura fixa (ferramentas, contador etc.)",m=>m.R.estrT)
+   +line("= Lucro operacional",m=>m.R.lucroOp,"tot",false)
+   +line("+ Outras entradas (rendimentos etc.)",m=>m.R.outras,"sub",false)
+   +line("Pró-labore e INSS",m=>m.socios)
+   +line("= Lucro líquido (sobra na empresa)",m=>m.R.res,"tot",false)
+   +`<tr class="sec"><td>Indicadores</td>${L.map(()=>"<td></td>").join("")}<td class="tc"></td><td></td></tr>`
+   +ind("Vendas (quantidade)",R=>R.qtd||"–",S.qtd||"–")
+   +ind("Ticket médio",R=>R.qtd?M(R.fat/R.qtd):"–",S.qtd?M(T.fat/S.qtd):"–")
+   +ind("ROAS real (faturamento ÷ anúncio)",R=>xx(R.adsTot?R.fat/R.adsTot:NaN),xx(S.adsTot?T.fat/S.adsTot:NaN))
+   +ind("Custo de anúncio por venda (CPA)",R=>R.qtd&&R.adsTot?M(R.adsTot/R.qtd):"–",S.qtd&&S.adsTot?M(S.adsTot/S.qtd):"–")
+   +ind("Margem de contribuição %",R=>R.fat?pc(R.margem/R.fat):"–",T.fat?pc(S.margem/T.fat):"–")
+   +ind("Margem líquida %",R=>R.fat?pc(R.res/R.fat):"–",T.fat?pc(T.res/T.fat):"–")
+   +ind("Impostos e taxas % do faturamento",R=>R.fat?pc(R.hidden/R.fat):"–",T.fat?pc(T.hidden/T.fat):"–")}
+ else{const C=pnCaixa(y),K=L.map(m=>C[m.k]),tem=x=>x.ent||x.sai;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").textContent="Quando o dinheiro entra e sai de verdade (regime de caixa). Vendas já sem as taxas, pela data da venda. Compras no cartão entram no mês em que a fatura vence. Saques entre contas da empresa não contam, porque o dinheiro continua na empresa.";
+  let acc=0;const accs=K.map(x=>acc+=x.ger);const sum=f=>K.reduce((a,x)=>a+f(x),0);
+  const line=(l,f,cls="sub",neg=true)=>{const t=sum(f);return `<tr class="${cls}"><td>${l}</td>${K.map(x=>`<td class="n ${cls==="tot"&&f(x)<0?"out":""}">${tem(x)?v(f(x),neg&&f(x)>0):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg&&t>0)}</td></tr>`};
+  $("pnt").innerHTML=head
+   +line("Vendas recebidas (já sem taxas)",x=>x.vendas,"sub",false)+line("Outras entradas",x=>x.outras,"sub",false)+line("= Entradas",x=>x.ent,"tot",false)
+   +line("Faturas dos cartões (pelo vencimento)",x=>x.cartao)+line("Pagamentos direto da conta",x=>x.conta)+line("Taxas de saque",x=>x.saque)+line("= Saídas",x=>x.sai,"tot",false)
+   +line("= Geração de caixa do mês",x=>x.ger,"tot",false)
+   +`<tr class="ind"><td>Acumulado no ano</td>${K.map((x,i)=>`<td class="n ${accs[i]<0?"out":""}">${tem(x)||L[i].k<=nowK?M(accs[i]):""}</td>`).join("")}<td class="n tc"></td></tr>`}}
+$("pnv").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;pnView=b.dataset.v;renderPanorama()});
+const pnGo=k=>{cur={y:+k.slice(0,4),m:+k.slice(5,7)-1};location.hash="#painel";render();scrollTo({top:0,behavior:"smooth"})};
+$("pyp").onclick=()=>{cur={y:cur.y-1,m:cur.m};render()};$("pyn").onclick=()=>{cur={y:cur.y+1,m:cur.m};render()};
+$("pnm").addEventListener("click",e=>{const r=e.target.closest("[data-k]");if(r)pnGo(r.dataset.k)});$("pnt").addEventListener("click",e=>{const r=e.target.closest("th[data-k]");if(r)pnGo(r.dataset.k)});
+$("pngt").addEventListener("click",e=>{const r=e.target.closest("[data-y]");if(!r)return;cur={y:+r.dataset.y,m:cur.m};render();scrollTo({top:0,behavior:"smooth"})});
+/* dica ao passar o dedo ou o mouse nos gráficos */
+for(const id of ["pnc1","pnc2"]){const box=$(id);const show=e=>{const h=e.target.closest(".hit");if(!h||!PN)return;pnTipOff(box);h.classList.add("on");const i=+h.dataset.i,m=PN.L[i];let a=0;for(let j=0;j<=i;j++)a+=PN.L[j].R.res;const br=box.getBoundingClientRect(),hr=h.getBoundingClientRect();
+ const html=id==="pnc1"?`<b>${cap(kName(m.k))}</b><div><span><i style="background:var(--cin)"></i>Entradas</span>${M(m.ent)}</div><div><span><i style="background:var(--cout)"></i>Saídas</span>${M(m.sai)}</div><div><span>Sobra</span>${M(m.R.res)}</div>`:`<b>${cap(kName(m.k))}</b><div><span>Sobra do mês</span>${M(m.R.res)}</div><div><span>Acumulado</span>${M(a)}</div>`;
+ pnTip(box,hr.left-br.left+hr.width/2,hr.top-br.top+20,html)};box.addEventListener("pointerover",show);box.addEventListener("click",show);box.addEventListener("pointerleave",()=>pnTipOff(box))}
 
 /* ---------- lançamentos ---------- */
 const TIPOS=[["venda","Venda"],["ads","Anúncio"],["desp","Despesa"],["transf","Saque / transferência"],["rec","Outra entrada"]];
