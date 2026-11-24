@@ -397,7 +397,9 @@ const CATG=Object.fromEntries(CATS);
 const GNAME={venda:"custos da venda",trafego:"tráfego",estrutura:"estrutura fixa",socios:"sócios (pró-labore e INSS)",distrib:"distribuição de lucros",das:"impostos pagos (já previstos no resultado, não soma de novo)"};
 const IOF_INT=3.5;
 /* tabelas do Simples Nacional (LC 123/2006): limite da faixa, alíquota nominal, parcela a deduzir */
-const SIMPLES={III:[[180000,.06,0],[360000,.112,9360],[720000,.135,17640],[1800000,.16,35640],[3600000,.21,125640],[4800000,.33,648000]],V:[[180000,.155,0],[360000,.18,4500],[720000,.195,9900],[1800000,.205,17100],[3600000,.23,62100],[4800000,.305,540000]]};
+/* Anexo II (indústria): a InfoPro é enquadrada nele pela contabilidade (conferido nas guias de set e out/2026). Como o produto é digital, a guia não traz IPI nem ICMS: só IRPJ, CSLL, Cofins, PIS e CPP, que somam 60,5% do DAS cheio (faixas 1 a 5). */
+const SIMPLES_PARTE={II:.605};
+const SIMPLES={II:[[180000,.045,0],[360000,.078,5940],[720000,.10,13860],[1800000,.112,22500],[3600000,.147,85500],[4800000,.30,720000]],III:[[180000,.06,0],[360000,.112,9360],[720000,.135,17640],[1800000,.16,35640],[3600000,.21,125640],[4800000,.33,648000]],V:[[180000,.155,0],[360000,.18,4500],[720000,.195,9900],[1800000,.205,17100],[3600000,.23,62100],[4800000,.305,540000]]};
 
 /* ---------- configuração inicial ---------- */
 const DEF_CFG={
@@ -493,7 +495,7 @@ const txVal=t=>t.k==="ads"?adsSplit(t).total:t.k==="desp"?despTot(t):t.k==="vend
 let firstK=null;
 function baseMonth(k,cid){return inMonth(k).filter(t=>t.k==="venda"&&txCnpj(t)===cid).reduce((a,t)=>a+(+t.bruto||0)-(+t.reemb||0),0)}
 function rbt12(k,c){let s=0;for(let i=1;i<=12;i++){const kk=addM(k,-i);s+=(firstK&&kk>=firstK)?baseMonth(kk,c.id):(+c.rbtIni||0)/12}return r2(s)}
-function aliqEf(k,c){if(c.regime==="mei")return 0;if(c.aliq!==""&&c.aliq!=null&&!isNaN(parseMoney(c.aliq)))return parseMoney(c.aliq)/100;const tb=SIMPLES[c.anexo]||SIMPLES.III,rbt=rbt12(k,c);if(rbt<=0)return tb[0][1];const f=tb.find(x=>rbt<=x[0])||tb[tb.length-1];return Math.max(0,(rbt*f[1]-f[2])/rbt)}
+function aliqEf(k,c){if(c.regime==="mei")return 0;if(c.aliq!==""&&c.aliq!=null&&!isNaN(parseMoney(c.aliq)))return parseMoney(c.aliq)/100;const tb=SIMPLES[c.anexo]||SIMPLES.III,rbt=rbt12(k,c);if(rbt<=0)return tb[0][1]*(SIMPLES_PARTE[c.anexo]||1);const f=tb.find(x=>rbt<=x[0])||tb[tb.length-1];return Math.max(0,(rbt*f[1]-f[2])/rbt)*(SIMPLES_PARTE[c.anexo]||1)}
 /* DAS pago no mês seguinte (competência k). Quando existe, vale o valor real no lugar da estimativa. */
 function dasPago(k,c){return r2(inMonth(addM(k,1)).filter(t=>t.k==="desp"&&t.cat==="DAS (pagamento)"&&t.cnpj===c.id&&t.pago!==false).reduce((a,t)=>a+despTot(t),0))}
 function dasMonth(k,c){if(c.regime==="mei")return +c.mei||0;const p=dasPago(k,c);if(p>0)return p;return r2(baseMonth(k,c.id)*aliqEf(k,c))}
@@ -854,7 +856,7 @@ async function jSave(){const J=IMP.data;
 
 /* ---------- configurar ---------- */
 const CFG_UI=[
- {sec:"cnpjs",title:"Empresas (CNPJ)",hint:"No Simples, deixe a alíquota em branco para o app calcular pela faixa de faturamento, ou preencha com a alíquota que a contabilidade usa. “Faturamento 12 meses antes” serve para calcular a faixa enquanto o app ainda não tem um ano de vendas.",fields:[["nome","Nome"],["regime","Regime",[["simples","Simples Nacional"],["mei","MEI"]]],["anexo","Anexo",[["III","III"],["V","V"]]],["aliq","Alíquota fixa %","pct"],["rbtIni","Faturamento 12 meses antes do app","money"],["mei","DAS fixo MEI","money"]],add:()=>({id:uid("c"),nome:"Nova empresa",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0})},
+ {sec:"cnpjs",title:"Empresas (CNPJ)",hint:"No Simples, deixe a alíquota em branco para o app calcular pela faixa de faturamento, ou preencha com a alíquota que a contabilidade usa. “Faturamento 12 meses antes” serve para calcular a faixa enquanto o app ainda não tem um ano de vendas.",fields:[["nome","Nome"],["regime","Regime",[["simples","Simples Nacional"],["mei","MEI"]]],["anexo","Anexo",[["II","II (sem IPI e ICMS)"],["III","III"],["V","V"]]],["aliq","Alíquota fixa %","pct"],["rbtIni","Faturamento 12 meses antes do app","money"],["mei","DAS fixo MEI","money"]],add:()=>({id:uid("c"),nome:"Nova empresa",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0})},
  {sec:"prods",title:"Produtos",hint:"Teste: aparece separado no painel. Pausado: some das listas de lançamento, mas continua no histórico.",fields:[["nome","Nome"],["cnpj","Empresa","cnpj"],["papel","Papel",[["principal","Principal"],["bump","Order bump"],["bump e direto","Bump e direto"]]],["status","Situação",[["ativo","Ativo"],["teste","Teste"],["pausado","Pausado"]]],["plat","Plataforma","plat"],["preco","Preço","money"]],add:()=>({id:uid("p"),nome:"Novo produto",cnpj:fc||"ft",papel:"principal",status:"teste",plat:"Greenn",preco:""})},
  {sec:"plats",title:"Plataformas de venda",hint:"Taxa cobrada em cada venda. A conta é onde o dinheiro da venda fica até o saque. Confira as taxas da Hotmart e da Kiwify no seu plano.",fields:[["nome","Nome"],["pct","Taxa %","num"],["fixo","Fixo por venda","money"],["conta","Conta","conta"]],add:()=>({nome:"Nova",pct:0,fixo:0,conta:""})},
  {sec:"ads",title:"Contas de anúncio",hint:"Em real: 12,15% de impostos dentro do valor cobrado. Em dólar: 0% de impostos e 3,5% de IOF somado. Renomeie com o nome real de cada conta.",fields:[["nome","Nome"],["cnpj","Empresa","cnpj"],["moeda","Moeda",[["BRL","Real"],["USD","Dólar"]]],["imp","Impostos dentro %","num"],["iof","IOF somado %","num"]],add:()=>({id:uid("a"),nome:"Nova conta",cnpj:fc||"ft",moeda:"BRL",imp:12.15,iof:0})},

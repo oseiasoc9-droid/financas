@@ -51,7 +51,7 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 - Contas de anúncio **em real**: desde jan/2026 a Meta repassa PIS/Cofins (9,25%) e ISS (2,9%). Do valor cobrado no cartão, **12,15% são impostos** (R$ 100 de mídia viram R$ 113,83 cobrados).
 - Contas **em dólar** (são duas, as que menos gastam): +**3,5% de IOF** sobre o valor convertido. Ele pensa em migrar contas para dólar mais para frente.
 - Ferramentas pagas em dólar (ex.: Claude): +3,5% de IOF, marcado como "compra internacional".
-- DAS do Simples: calculado pela alíquota efetiva (Anexo III, ou V), com base no faturamento bruto dos 12 meses anteriores (RBT12). Existe a opção de "alíquota fixa %" em Configurar. Vence dia 20 do mês seguinte. **Pendente:** na planilha antiga o DAS pago era bem menor que 6% do faturamento. Ele vai confirmar com o contador a alíquota e a base de cálculo.
+- DAS do Simples: a InfoPro está no **Anexo II** (conferido nas guias de set e out/2026: a guia só traz IRPJ, CSLL, Cofins, PIS e CPP, sem IPI e ICMS, que é 60,5% do DAS cheio; na faixa 1 dá 2,72% do faturamento). O app calcula pela alíquota efetiva do anexo (II, III ou V; no II multiplica por `SIMPLES_PARTE`), com base no faturamento bruto dos 12 meses anteriores (RBT12). Existe a opção de "alíquota fixa %" em Configurar. Vence dia 20 do mês seguinte. O INSS da guia separada (R$ 178,31) é os 11% descontados do pró-labore formal de R$ 1.621; a parte da empresa (CPP) já está dentro do DAS.
 
 ### Estrutura de dados (documentos na tabela `docs`)
 - `emp-cfg`: `{cnpjs, prods, plats, ads, contas, cards, fixas, imap}`. Os padrões estão em `DEF_CFG`. `imap` guarda `{plat, nome, prod}`: qual produto do app corresponde a cada nome de produto nos CSVs (`prod: "-"` = não importar).
