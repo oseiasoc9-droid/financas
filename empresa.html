@@ -86,7 +86,7 @@ td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .mc small{display:block;color:var(--mute);font-size:13px;font-weight:600}.mc small .badge{margin-left:6px}.mc b{display:block;font-weight:300;font-size:clamp(19px,2vw,24px);line-height:1.25;margin:3px 0;white-space:nowrap;font-variant-numeric:tabular-nums}.mc em{display:block;font-style:normal;color:var(--mute);font-size:12px;line-height:1.45}
 .tip[hidden]{display:none}
 #pnt td,#pnt th,#pngt td,#pngt th{white-space:nowrap}
-.dreano td,.dreano th{padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}.dreano tr>:first-child{position:sticky;left:0;background:var(--panel);z-index:1;min-width:190px}@media (max-width:620px){.dreano tr>:first-child{min-width:0;max-width:150px;white-space:normal;line-height:1.3}}
+.dreano td,.dreano th{padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}.dreano tr>:first-child{position:sticky;left:0;background:var(--panel);z-index:1;min-width:190px}@media (max-width:620px){#pnt tr>:first-child{min-width:130px;max-width:150px;white-space:normal;line-height:1.3}}
 .dreano tr.tot td{font-weight:700}.dreano tr.sub td:first-child{padding-left:18px;color:var(--mute)}.dreano tr.ind td{color:var(--mute);font-size:13px}.dreano tr.ind td:first-child{padding-left:18px}.dreano tr.sec td{color:var(--mute);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding-top:16px}.dreano th.tc,.dreano td.tc{border-left:1px solid var(--line)}.dreano th[data-k]{cursor:pointer}.dreano th.fut{opacity:.6}
 .rowc{cursor:pointer}.rowc:hover td{background:rgba(143,211,255,.05)}
 .empty{color:var(--mute);font-size:14px;padding:6px 0}
@@ -305,7 +305,7 @@ return api})();
     <div class="panel"><h2>Sobra acumulada no ano</h2><p class="hint" id="pnc2h">Quanto a empresa já guardou no ano, somando a sobra de cada mês.</p><div class="chart" id="pnc2"></div></div>
   </div>
   <div class="panel"><h2>Cada mês</h2><p class="hint">Toque num mês para abrir o resultado completo dele no Painel.</p><div class="mgrid" id="pnm"></div></div>
-  <div class="panel"><div class="phead"><h2 id="pnth">DRE gerencial do ano</h2><div class="seg" id="pnv"><button data-v="dre" aria-pressed="true">Resultado</button><button data-v="caixa" aria-pressed="false">Fluxo de caixa</button></div></div><p class="hint" id="pnthint" style="margin-top:6px"></p><div class="tscroll"><table class="dreano" id="pnt"></table></div></div>
+  <div class="panel"><div class="phead"><h2 id="pnth">DRE gerencial do ano</h2><div class="seg" id="pnv"><button data-v="dre" aria-pressed="true">Resultado: deu lucro?</button><button data-v="caixa" aria-pressed="false">Caixa: tem dinheiro?</button></div></div><p class="hint" id="pnthint" style="margin-top:6px"></p><div class="tscroll"><table class="dreano" id="pnt"></table></div></div>
   <div class="panel"><h2>Total geral até aqui</h2><p class="hint" id="pngh"></p><div class="figs g4" id="pngf"></div><div class="tscroll"><table id="pngt"></table></div></div>
 </section>
 
@@ -606,7 +606,7 @@ let pnView="dre";
 function pnTable(L,T,feitos){const y=cur.y;document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));
  const head=`<tr><th></th>${L.map(m=>`<th class="n${m.k>nowK?" fut":""}" data-k="${m.k}">${mAbbr(m.k)}</th>`).join("")}<th class="n tc">Total</th>${pnView==="dre"?`<th class="n">% fat.</th>`:""}</tr>`;
  const v=(x,neg)=>Math.abs(x)<0.005?"–":(neg?"− ":"")+M(x);
- if(pnView==="dre"){$("pnth").textContent=`DRE gerencial de ${y}`;$("pnthint").textContent="O demonstrativo de resultado mês a mês, no formato que empresas e agências usam: cada venda e cada gasto no mês em que aconteceu (regime de competência). Mostra se a operação dá lucro. Toque no nome do mês para abrir o Painel dele.";
+ if(pnView==="dre"){$("pnth").textContent=`DRE gerencial de ${y}`;$("pnthint").innerHTML="<b>Deu lucro?</b> Cada venda e cada gasto contam no mês em que aconteceram. Uma compra no cartão feita em novembro conta em novembro, mesmo que a fatura vença em dezembro. Toque no nome do mês para abrir o Painel dele.";
   const P=x=>T.fat>0?`<td class="n">${pc(x/T.fat)}</td>`:"<td></td>";
   const line=(l,f,cls="sub",neg=true,tot)=>{const t=L.reduce((a,m)=>a+(m.tem?f(m):0),0);return `<tr class="${cls}"><td>${l}</td>${L.map(m=>`<td class="n ${cls==="tot"&&m.tem?(f(m)>=0?"":"out"):""}">${m.tem?v(f(m),neg):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg)}</td>${P(t)}</tr>`};
   const ind=(l,f,ft)=>`<tr class="ind"><td>${l}</td>${L.map(m=>`<td class="n">${m.tem?f(m.R,m):""}</td>`).join("")}<td class="n tc">${ft}</td><td></td></tr>`;
@@ -629,7 +629,7 @@ function pnTable(L,T,feitos){const y=cur.y;document.querySelectorAll("#pnv butto
    +ind("Margem de contribuição %",R=>R.fat?pc(R.margem/R.fat):"–",T.fat?pc(S.margem/T.fat):"–")
    +ind("Margem líquida %",R=>R.fat?pc(R.res/R.fat):"–",T.fat?pc(T.res/T.fat):"–")
    +ind("Impostos e taxas % do faturamento",R=>R.fat?pc(R.hidden/R.fat):"–",T.fat?pc(T.hidden/T.fat):"–")}
- else{const C=pnCaixa(y),K=L.map(m=>C[m.k]),tem=x=>x.ent||x.sai;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").textContent="Quando o dinheiro entra e sai de verdade (regime de caixa). Vendas já sem as taxas, pela data da venda. Compras no cartão entram no mês em que a fatura vence. Saques entre contas da empresa não contam, porque o dinheiro continua na empresa.";
+ else{const C=pnCaixa(y),K=L.map(m=>C[m.k]),tem=x=>x.ent||x.sai;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").innerHTML="<b>Tem dinheiro?</b> Mostra quando o dinheiro sai da conta de verdade. Uma compra no cartão feita em novembro aparece no mês em que a fatura vence. As vendas entram já sem as taxas, e os saques entre contas da empresa não contam.";
   let acc=0;const accs=K.map(x=>acc+=x.ger);const sum=f=>K.reduce((a,x)=>a+f(x),0);
   const line=(l,f,cls="sub",neg=true)=>{const t=sum(f);return `<tr class="${cls}"><td>${l}</td>${K.map(x=>`<td class="n ${cls==="tot"&&f(x)<0?"out":""}">${tem(x)?v(f(x),neg&&f(x)>0):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg&&t>0)}</td></tr>`};
   $("pnt").innerHTML=head
