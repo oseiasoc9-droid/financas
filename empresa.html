@@ -40,7 +40,7 @@ main{padding-block:22px 80px}
 h1{font-weight:300;font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0 0 6px}
 h2{font-size:17px;margin:0 0 4px}
 h3{font-size:15px;margin:16px 0 6px}
-.sub,.hint{color:var(--mute)}
+.sub,.hint{color:var(--mute)}.tsum{color:var(--mute);font-size:14px;margin:0 0 10px}
 .hint{font-size:14px;margin:0 0 12px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -285,7 +285,7 @@ return api})();
 <section id="lancamentos" hidden>
   <h1>Lançamentos</h1><p class="sub">Tudo o que entrou e saiu no mês. Toque numa linha para editar.</p>
   <div class="filt"><div class="seg" id="ltipo"></div><button class="btn sm" id="fixbtn" hidden></button><button class="btn sm" id="impbtn">Importar vendas (CSV)</button></div>
-  <div class="panel" style="margin-top:14px"><div class="tscroll"><table id="ltab"></table></div></div>
+  <div class="panel" style="margin-top:14px"><p class="tsum" id="tsum"></p><div class="tscroll"><table id="ltab"></table></div></div>
 </section>
 
 <section id="produtos" hidden>
@@ -374,7 +374,7 @@ const SIMPLES={III:[[180000,.06,0],[360000,.112,9360],[720000,.135,17640],[18000
 
 /* ---------- configuração inicial ---------- */
 const DEF_CFG={
- cnpjs:[{id:"ft",nome:"FarmaTécnica",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0},{id:"tm",nome:"Tainá (MEI)",regime:"mei",anexo:"",aliq:"",rbtIni:0,mei:86}],
+ cnpjs:[{id:"ft",nome:"InfoPro Digital",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0},{id:"tm",nome:"Tainá (MEI)",regime:"mei",anexo:"",aliq:"",rbtIni:0,mei:86}],
  plats:[{nome:"Greenn",pct:4.99,fixo:1,conta:"Greenn"},{nome:"Hotmart",pct:9.9,fixo:2.49,conta:"Hotmart"},{nome:"Kiwify",pct:8.99,fixo:2.49,conta:"Kiwify"}],
  prods:[
   {id:"p1",nome:"Manual de Fórmulas FarmaTécnica",cnpj:"ft",papel:"principal",status:"ativo",plat:"Greenn",preco:""},
@@ -531,6 +531,8 @@ function txDesc(t){if(t.k==="venda"){const p=prodOf(t.prod);return `${p?p.nome:"
 function renderList(){const k=curK();$("ltipo").innerHTML=[["","Tudo"]].concat(TIPOS).map(([v,l])=>`<button data-t="${v}" aria-pressed="${ltipo===v}">${l}</button>`).join("");
  const L=inMonth(k).filter(pass).filter(t=>!ltipo||t.k===ltipo).sort((a,b)=>b.data.localeCompare(a.data));
  const miss=fixasFaltando(k);const fb=$("fixbtn");fb.hidden=!miss.length;fb.textContent=`Lançar ${miss.length} ${miss.length>1?"despesas fixas":"despesa fixa"} do mês`;
+ const ent=L.filter(t=>t.k==="venda"||t.k==="rec").reduce((a,t)=>a+txVal(t),0),sai=L.filter(t=>t.k==="ads"||t.k==="desp").reduce((a,t)=>a+txVal(t),0);
+ $("tsum").textContent=L.length?`${L.length} lançamento${L.length>1?"s":""} · entradas ${M(ent)} · saídas ${M(sai)}`:"";
  $("ltab").innerHTML=L.length?`<tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Empresa</th><th>Pagamento</th><th class="n">Valor</th></tr>`+L.map(t=>{const card=pagCard(t),cta=pagConta(t);const pg=card?`${card}<span class="badge mute">fatura ${dShort(dueOf(card,t.data))}</span>`:cta?`${cta}${t.pago===false?`<span class="badge pend">pendente</span>`:""}`:t.k==="venda"?esc(t.plat):"";const pos=t.k==="venda"||t.k==="rec"||(t.k==="ajuste"&&t.valor>0);return `<tr class="rowc" data-id="${esc(t.id)}"><td>${dShort(t.data)}</td><td><span class="badge ${t.k==="venda"||t.k==="rec"?"info":t.k==="ads"?"pend":"mute"}" style="margin:0">${TNAME[t.k]}</span></td><td>${esc(txDesc(t))}${t.obs?`<br><small class="hint">${esc(t.obs)}</small>`:""}${t.k==="desp"?`<br><small class="hint">${esc(t.cat)}${t.intl?" · +IOF":""}</small>`:""}</td><td><small>${esc((cnpjOf(txCnpj(t))||{}).nome||"")}</small></td><td><small>${pg}</small></td><td class="n ${pos?"in":""}">${t.k==="venda"?`${M(t.bruto)}<br><small class="hint">líquido ${M(vendaLiq(t))}</small>`:t.k==="ads"?`${M(adsSplit(t).total)}<br><small class="hint">mídia ${M(adsSplit(t).midia)}</small>`:M(txVal(t))}</td></tr>`}).join(""):`<tr><td class="empty">Nenhum lançamento ${ltipo?"desse tipo ":""}neste mês.</td></tr>`}
 $("ltipo").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;ltipo=b.dataset.t;renderList()});
 $("ltab").addEventListener("click",e=>{const r=e.target.closest("[data-id]");if(!r)return;const t=all().find(x=>x.id===r.dataset.id);if(t)openForm(t.k,t)});
