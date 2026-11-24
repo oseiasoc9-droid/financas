@@ -39,7 +39,8 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 
 ### Plataformas, contas e cartões
 - Greenn: taxa de **4,99% + R$ 1,00 por venda**. Checkout principal da FarmaTécnica.
-- Hotmart e Kiwify: taxas padrão no app (9,9% + R$ 1 e 8,99% + R$ 2,49) que **ainda precisam ser confirmadas por ele**.
+- Hotmart: **9,9% + R$ 2,49**. Kiwify: **8,99% + R$ 2,49** (em vendas baratas, abaixo de uns R$ 20, a Kiwify não cobra o fixo). Conferido nos relatórios de vendas em 24/11/2026.
+- Ele tem conta na Hotmart e na Kiwify tanto no nome dele (FarmaTécnica) quanto no da Tainá. A Kiwify do Oseias também vende produtos da Tainá (Guia de Alongamento, SouFlex).
 - Contas: **Nubank PJ** (recebe os saques das plataformas), Greenn, Hotmart, Kiwify (saldos dentro das plataformas) e MP Tainá.
 - Cartões de crédito: **Nubank PJ** (fecha dia 1, vence dia 8) e **Cora** (fecha dia 5, vence dia 10; **datas a confirmar**). Ele reveza entre os dois para pagar a Meta.
 
@@ -50,9 +51,9 @@ Venda de infoprodutos com funil simples: anúncio (Meta Ads), página de vendas 
 - DAS do Simples: calculado pela alíquota efetiva (Anexo III, ou V), com base no faturamento bruto dos 12 meses anteriores (RBT12). Existe a opção de "alíquota fixa %" em Configurar. Vence dia 20 do mês seguinte. **Pendente:** na planilha antiga o DAS pago era bem menor que 6% do faturamento. Ele vai confirmar com o contador a alíquota e a base de cálculo.
 
 ### Estrutura de dados (documentos na tabela `docs`)
-- `emp-cfg`: `{cnpjs, prods, plats, ads, contas, cards, fixas}`. Os padrões estão em `DEF_CFG`.
+- `emp-cfg`: `{cnpjs, prods, plats, ads, contas, cards, fixas, imap}`. Os padrões estão em `DEF_CFG`. `imap` guarda `{plat, nome, prod}`: qual produto do app corresponde a cada nome de produto nos CSVs (`prod: "-"` = não importar).
 - `emp-m-AAAA-MM`: `{kind:"emp-month", txs:[...]}`. Tipos de transação (`k`):
-  - `venda`: prod, plat, qtd, bruto, taxa, reemb
+  - `venda`: prod, plat, qtd, bruto, taxa, reemb. Vendas importadas de CSV têm também `ext` (`{idDaVenda: taxa}`) e `extR` (ids reembolsados); são somadas por dia, produto e plataforma, e o `ext` evita duplicar na reimportação.
   - `ads`: conta (id da conta de anúncio), cobrado, prod (opcional), pag
   - `desp`: desc, cat, valor, cnpj, pag, intl, pago, fix (id da despesa fixa)
   - `transf`: de, para, valor, taxa (taxa de saque)
@@ -68,8 +69,9 @@ Painel (resultado do mês, impostos escondidos, tráfego real com ROAS real e RO
 Faturamento bruto − reembolsos − taxas das plataformas − taxas de saque − DAS previsto = **receita líquida**; − anúncios (mídia + impostos + IOF) − outros canais de tráfego = **margem de contribuição**; − estrutura fixa = **lucro operacional**; + outras entradas − pró-labore − INSS = **sobra na empresa**. A categoria "DAS (pagamento)" não entra no DRE, porque o DAS já foi previsto por competência.
 
 ## Pendências e próximos passos
-1. **Importar o CSV de vendas da Greenn** (e da Hotmart/Kiwify), para lançar vendas brutas e taxas automaticamente. Ele vai mandar os arquivos de exemplo.
-2. Confirmar com ele: a alíquota do DAS e a base com o contador, as datas do Cora, as taxas da Hotmart e da Kiwify, os saldos iniciais das contas e os nomes reais das contas de anúncio.
+1. Feito em 24/11/2026: **importar vendas por CSV** (Greenn, Hotmart e Kiwify), botão “Importar vendas (CSV)” em Lançamentos. A Greenn não tem código de transação no CSV; o id é montado com data, produto, valor e data de pagamento.
+2. Confirmar com ele: a alíquota do DAS e a base com o contador, as datas do Cora, os saldos iniciais das contas e os nomes reais das contas de anúncio.
+2b. Faltam os arquivos `icon-192.png` e `icon-512.png` (o manifest e o apple-touch-icon apontam para eles).
 3. Ideia: o pró-labore pago no lado Empresa virar uma entrada automática na conta MP Oseias do lado Pessoal (requer escrever no formato de dados do `index.html`, com cuidado).
 4. Depois: avaliar a migração das contas de anúncio para dólar (comparar 12,15% de impostos com 3,5% de IOF + câmbio).
 5. Os meses antigos da planilha (2026) não foram importados. Ele disse que serviam só para entender o fluxo de gastos.

@@ -147,7 +147,7 @@ section[hidden]{display:none}
 
 <section id="lancamentos" hidden>
   <h1>Lançamentos</h1><p class="sub">Tudo o que entrou e saiu no mês. Toque numa linha para editar.</p>
-  <div class="filt"><div class="seg" id="ltipo"></div><button class="btn sm" id="fixbtn" hidden></button></div>
+  <div class="filt"><div class="seg" id="ltipo"></div><button class="btn sm" id="fixbtn" hidden></button><button class="btn sm" id="impbtn">Importar vendas (CSV)</button></div>
   <div class="panel" style="margin-top:14px"><div class="tscroll"><table id="ltab"></table></div></div>
 </section>
 
@@ -182,6 +182,12 @@ section[hidden]{display:none}
   <div class="box" id="fprev" hidden></div>
   <p class="hint" id="ferr" style="color:var(--pink);margin-top:10px"></p>
   <div class="fa"><button class="btn warn sp" id="fdel" hidden>Excluir</button><button class="btn" id="fcancel">Cancelar</button><button class="btn pri" id="fsave">Salvar</button></div>
+</div></div>
+<div class="ov" id="iov" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="ititle">
+  <h2 id="ititle">Importar vendas</h2>
+  <div id="ibody"></div>
+  <p class="hint" id="ierr" style="color:var(--pink);margin-top:10px"></p>
+  <div class="fa"><button class="btn" id="icancel">Cancelar</button><button class="btn pri" id="isave" hidden>Importar</button></div>
 </div></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -232,7 +238,7 @@ const SIMPLES={III:[[180000,.06,0],[360000,.112,9360],[720000,.135,17640],[18000
 /* ---------- configuração inicial ---------- */
 const DEF_CFG={
  cnpjs:[{id:"ft",nome:"FarmaTécnica",regime:"simples",anexo:"III",aliq:"",rbtIni:0,mei:0},{id:"tm",nome:"Tainá (MEI)",regime:"mei",anexo:"",aliq:"",rbtIni:0,mei:86}],
- plats:[{nome:"Greenn",pct:4.99,fixo:1,conta:"Greenn"},{nome:"Hotmart",pct:9.9,fixo:1,conta:"Hotmart"},{nome:"Kiwify",pct:8.99,fixo:2.49,conta:"Kiwify"}],
+ plats:[{nome:"Greenn",pct:4.99,fixo:1,conta:"Greenn"},{nome:"Hotmart",pct:9.9,fixo:2.49,conta:"Hotmart"},{nome:"Kiwify",pct:8.99,fixo:2.49,conta:"Kiwify"}],
  prods:[
   {id:"p1",nome:"Manual de Fórmulas FarmaTécnica",cnpj:"ft",papel:"principal",status:"ativo",plat:"Greenn",preco:""},
   {id:"p2",nome:"Documentos Operacionais FarmaTécnica",cnpj:"ft",papel:"principal",status:"ativo",plat:"Greenn",preco:""},
@@ -460,6 +466,96 @@ function openAjuste(nome){editing=null;fTipo="ajuste";const S=saldos();$("dlgt")
 const mainSave=$("fsave").onclick;function restoreSave(){$("fsave").onclick=mainSave}
 $("fcancel").addEventListener("click",restoreSave);
 $("add").onclick=()=>{restoreSave();openForm(ltipo&&TIPOS.some(x=>x[0]===ltipo)?ltipo:"venda")};
+
+/* ---------- importar vendas (CSV da Greenn, Hotmart e Kiwify) ---------- */
+const IMP_TAXA={Greenn:{pct:4.99,fixo:1},Hotmart:{pct:9.9,fixo:2.49},Kiwify:{pct:8.99,fixo:2.49}};
+function parseCSV(text){text=text.replace(/^﻿/,"");const first=text.split(/\r?\n/,1)[0];const d=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?";":",";const rows=[];let row=[],f="",q=false;
+ for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}else if(c==='"')q=true;else if(c===d){row.push(f);f=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(f);f="";if(row.some(x=>x.trim()!==""))rows.push(row);row=[]}else f+=c}
+ row.push(f);if(row.some(x=>x.trim()!==""))rows.push(row);const h=(rows.shift()||[]).map(x=>x.trim());return {h,rows:rows.map(r=>Object.fromEntries(h.map((k,i)=>[k,(r[i]??"").trim()])))}}
+const inum=s=>{s=String(s??"").replace(/[R$\s]/g,"");if(!s||s==="(none)")return 0;const lc=s.lastIndexOf(","),ld=s.lastIndexOf(".");s=lc>ld?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");return +s||0};
+const idate=s=>{s=String(s||"");let m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(m)return `${m[3]}-${m[2]}-${m[1]}`;m=s.match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1]}-${m[2]}-${m[3]}`:""};
+const inorm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\./g,"").replace(/[^a-z0-9]+/g," ").trim();
+/* lê o arquivo e devolve as vendas num formato só, seja qual for a plataforma */
+function impParse(text){const {h,rows}=parseCSV(text);const has=k=>h.includes(k);let tipo="",dono="",out=[];const seen={};
+ const st=(s,pago,reemb)=>{s=inorm(s);return pago.includes(s)?"pago":reemb.includes(s)?"reemb":""};
+ const push=(id,o)=>{seen[id]=(seen[id]||0)+1;out.push({...o,id:seen[id]>1?id+"#"+seen[id]:id})};
+ if(has("Código da transação")&&has("Faturamento líquido do(a) Produtor(a)")){tipo="Hotmart";
+  for(const r of rows){const bruto=inum(r["Faturamento bruto (sem impostos)"])||inum(r["Valor de compra sem impostos"]);const liq=inum(r["Faturamento líquido do(a) Produtor(a)"]);dono=dono||r["Produtor(a)"]||"";
+   push("h:"+r["Código da transação"],{date:idate(r["Data da transação"]),name:r["Produto"],st:st(r["Status da transação"],["aprovado","completo"],["reembolsado","chargeback","devolvido"]),raw:r["Status da transação"],bruto:r2(bruto),fee:r2(Math.max(0,bruto-liq))})}}
+ else if(has("ID da venda")&&has("Valor líquido")&&has("Taxas")){tipo="Kiwify";
+  for(const r of rows){const liq=inum(r["Valor líquido"]),fee=inum(r["Taxas"]);const bruto=liq+fee+inum(r["Comissão do afiliado"])+inum(r["Comissões dos coprodutores"]);dono=dono||r["Nota fisca emitada por"]||"";
+   push("k:"+r["ID da venda"],{date:idate(r["Data de Criação"]),name:r["Produto"],st:st(r["Status"],["paid","approved"],["refunded","chargedback","chargeback"]),raw:r["Status"],bruto:r2(bruto),fee:r2(bruto-liq)})}}
+ else if(has("Nome do produto")&&has("Valor Líquido")&&has("Status da venda")){tipo="Greenn";
+  for(const r of rows){const bruto=inum(r["Valor Bruto"]),liq=inum(r["Valor Líquido"]);
+   push("g:"+[r["Data"],r["Nome do produto"],r["Valor Bruto"],r["Data de pagamento"]].join("|"),{date:idate(r["Data de pagamento"])||idate(r["Data"]),name:r["Nome do produto"],st:st(r["Status da venda"],["paid","approved"],["refunded","chargedback","chargeback"]),raw:r["Status da venda"],bruto:r2(bruto),fee:r2(Math.max(0,bruto-liq))})}}
+ else throw new Error("Não reconheci este arquivo. Use o relatório de vendas exportado da Greenn, Hotmart ou Kiwify, sem mudar as colunas.");
+ return {tipo,dono,rows:out.filter(x=>x.date&&x.name)}}
+/* acha o produto do app com o nome mais parecido */
+const ISIN={pops:"operacionais",manuais:"manual",flexibilidade:"flex",souflex:"flex",excipientes:"excipientes"};
+function impGuess(tipo,name){const m=(cfg.imap||[]).find(x=>x.plat===tipo&&x.nome===name);if(m&&(m.prod==="-"||prodOf(m.prod)))return m.prod;
+ const tok=s=>new Set(inorm(s).split(" ").map(w=>ISIN[w]||w).filter(w=>w.length>2&&!["de","da","do","para","com","farmatecnica","taina","guia","metodo"].includes(w)));const a=tok(name);let best="",sc=0;
+ for(const p of cfg.prods){const b=tok(p.nome);if(!a.size||!b.size)continue;let n=0;for(const w of a)if(b.has(w))n++;const s=n/Math.min(a.size,b.size);if(s>sc){sc=s;best=p.id}}return sc>=0.5?best:"+"}
+const IMP={};
+const iCnpjDono=dono=>{const t=cfg.cnpjs.find(c=>/tain/i.test(c.nome));if(/tain/i.test(dono)&&t)return t.id;return (cfg.cnpjs.find(c=>c.regime!=="mei")||cfg.cnpjs[0]).id};
+const iShort=c=>String(c.nome).replace(/\s*\(.*\)\s*/g,"").trim();
+function openImport(){IMP.data=null;$("ibody").innerHTML=`<label>Arquivo de vendas (.csv)<input type="file" id="ifile" accept=".csv,text/csv"></label><p class="hint" style="margin-top:8px">Exporte o relatório de vendas na Greenn, na Hotmart ou na Kiwify e escolha o arquivo aqui. Vendas que já foram importadas antes são puladas, então pode importar o mesmo período de novo sem duplicar.</p>`;$("ierr").textContent="";$("isave").hidden=true;$("iov").hidden=false}
+async function impRead(file){const buf=await file.arrayBuffer();let t=new TextDecoder("utf-8").decode(buf);if(t.includes("�"))t=new TextDecoder("windows-1252").decode(buf);return t}
+function impPlatOpts(){const D=IMP.data,c=cnpjOf(D.cnpj)||cfg.cnpjs[0];const ex=cfg.plats.filter(p=>p.nome.toLowerCase().startsWith(D.tipo.toLowerCase()));const novo=`${D.tipo} ${iShort(c)}`;
+ const def=IMP.plat||(ex.find(p=>(contaOf(p.conta)||{}).cnpj===D.cnpj)||{}).nome||(cfg.plats.some(p=>p.nome===novo)?novo:"+");
+ return `<select id="iplat">${ex.map(p=>opt(p.nome,`${p.nome} (dinheiro fica na conta ${p.conta||"—"})`,def)).join("")}${cfg.plats.some(p=>p.nome===novo)?"":opt("+",`Criar conta nova: ${novo}`,def)}</select>`}
+function impRender(){const D=IMP.data;if(!D)return;const plat=$("iplat")?$("iplat").value:"";
+ const names={};for(const r of D.rows){if(!r.st)continue;const n=names[r.name]=names[r.name]||{q:0,v:0};n.q++;n.v+=r.bruto}
+ const pago=D.rows.filter(r=>r.st==="pago").length,reemb=D.rows.filter(r=>r.st==="reemb").length,ign=D.rows.length-pago-reemb;
+ const prodRows=Object.entries(names).sort((a,b)=>b[1].v-a[1].v).map(([n,s],i)=>{const g=D.map[n]??impGuess(D.tipo,n);D.map[n]=g;const nc=D.newc[n]||D.cnpj;
+  return `<tr><td>${esc(n)}<br><small class="hint">${s.q} ${s.q>1?"vendas":"venda"} · ${M(s.v)}</small></td><td><select data-ip="${i}">${opt("+","Criar produto novo",g)}${cfg.prods.map(p=>opt(p.id,p.nome+((cnpjOf(p.cnpj)||{}).nome?` · ${cnpjOf(p.cnpj).nome}`:""),g)).join("")}${opt("-","Não importar",g)}</select>${g==="+"?`<select data-ic="${i}" style="margin-top:6px">${cfg.cnpjs.map(c=>opt(c.id,"Empresa: "+c.nome,nc)).join("")}</select>`:""}</td></tr>`}).join("");
+ D.names=Object.keys(names).sort((a,b)=>names[b].v-names[a].v);
+ /* resumo por mês */
+ const byM={};for(const r of D.rows){if(!r.st||D.map[r.name]==="-")continue;const k=r.date.slice(0,7);const o=byM[k]=byM[k]||{q:0,v:0,re:0,dup:0};const ex=impExisting(k);if(ex.has(r.id)&&!(r.st==="reemb"&&!ex.get(r.id)))o.dup++;else{o.q++;o.v+=r.bruto;if(r.st==="reemb")o.re+=r.bruto}}
+ const pn=plat==="+"?"":plat;const ks=Object.keys(byM).sort().reverse();if(!D.sel)D.sel=Object.fromEntries(ks.map(k=>[k,true]));
+ const manual=k=>inMonth(k).filter(t=>t.k==="venda"&&!t.ext&&pn&&t.plat===pn).length;const anyMan=ks.some(k=>D.sel[k]&&manual(k));
+ const mRows=ks.map(k=>{const o=byM[k],mn=manual(k);return `<tr><td><label class="chk"><input type="checkbox" data-im="${k}" ${D.sel[k]?"checked":""}> ${cap(kName(k,{month:"short",year:"numeric"}))}</label></td><td class="n">${o.q}${o.dup?`<span class="badge mute">${o.dup} já ${o.dup>1?"importadas":"importada"}</span>`:""}${mn?`<span class="badge pend">${mn} à mão</span>`:""}</td><td class="n">${M(o.v)}</td><td class="n">${o.re?M(o.re):"–"}</td></tr>`}).join("");
+ const tot=ks.filter(k=>D.sel[k]).reduce((a,k)=>a+byM[k].q,0);
+ $("ibody").innerHTML=`<div class="box" style="margin-top:0">Arquivo da <b>${D.tipo}</b>${D.dono?` · ${esc(D.dono)}`:""}<br><small class="hint">${pago} ${pago!==1?"vendas pagas":"venda paga"} · ${reemb} ${reemb!==1?"reembolsos":"reembolso"} · ${ign} ${ign!==1?"ignoradas":"ignorada"} (recusadas, aguardando pagamento ou canceladas)</small></div>
+ <div class="fgrid"><label class="full">Conta na plataforma${impPlatOpts()}</label></div>
+ <h3>Produtos</h3><p class="hint">Confira a qual produto do app cada nome do arquivo corresponde. O app lembra da escolha na próxima importação.</p><div class="tscroll"><table>${prodRows}</table></div>
+ <h3>Meses</h3><p class="hint">As vendas entram somadas por dia e por produto, com a taxa real cobrada pela plataforma. Reembolsos entram no mês da venda.</p><div class="tscroll"><table><tr><th>Mês</th><th class="n">Vendas novas</th><th class="n">Bruto</th><th class="n">Reembolsos</th></tr>${mRows||`<tr><td class="empty">Nenhuma venda para importar.</td></tr>`}</table></div>
+ ${anyMan?`<label class="chk" style="margin-top:12px"><input type="checkbox" id="idelman" ${D.delman?"checked":""}> Apagar as vendas de ${esc(pn)} que lancei à mão nesses meses (para não contar duas vezes)</label>`:""}`;
+ if(plat&&$("iplat").querySelector(`option[value="${CSS.escape(plat)}"]`))$("iplat").value=plat;
+ $("isave").hidden=false;$("isave").disabled=!tot;$("isave").textContent=tot?`Importar ${tot} ${tot>1?"vendas":"venda"}`:"Nada novo para importar"}
+/* vendas já importadas no mês: id → true se já está como reembolso */
+function impExisting(k){const m=new Map();for(const t of inMonth(k))if(t.k==="venda"&&t.ext){const R=new Set(t.extR||[]);for(const id of Object.keys(t.ext))m.set(id,R.has(id))}return m}
+$("ibody").addEventListener("change",async e=>{const x=e.target,D=IMP.data;$("ierr").textContent="";
+ if(x.id==="ifile"&&x.files[0]){try{const p=impParse(await impRead(x.files[0]));IMP.data={...p,cnpj:iCnpjDono(p.dono),map:{},newc:{},sel:null,delman:false};IMP.plat="";impRender()}catch(err){$("ierr").textContent=err.message}return}
+ if(!D)return;if(x.dataset.ip!=null)D.map[D.names[+x.dataset.ip]]=x.value;else if(x.dataset.ic!=null)D.newc[D.names[+x.dataset.ic]]=x.value;else if(x.dataset.im)D.sel[x.dataset.im]=x.checked;else if(x.id==="idelman")D.delman=x.checked;else if(x.id==="iplat")IMP.plat=x.value;impRender()});
+function closeImport(){$("iov").hidden=true;IMP.data=null}
+$("icancel").onclick=closeImport;$("iov").addEventListener("click",e=>{if(e.target===$("iov"))closeImport()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("iov").hidden)closeImport()});
+$("impbtn").onclick=openImport;
+$("isave").onclick=async()=>{const D=IMP.data,btn=$("isave");if(!D)return;btn.disabled=true;$("ierr").textContent="";try{
+ /* 1. configuração: conta nova na plataforma, produtos novos e o que cada nome significa */
+ let plat=$("iplat").value;const c=cnpjOf(D.cnpj)||cfg.cnpjs[0];
+ if(plat==="+"){plat=`${D.tipo} ${iShort(c)}`;const tx=IMP_TAXA[D.tipo]||{pct:0,fixo:0};if(!contaOf(plat))cfg.contas.push({nome:plat,tipo:"plataforma",cnpj:c.id,ini:0});cfg.plats.push({nome:plat,pct:tx.pct,fixo:tx.fixo,conta:plat})}
+ cfg.imap=(cfg.imap||[]).filter(x=>!(x.plat===D.tipo&&x.nome in D.map));
+ for(const n of D.names){let pid=D.map[n];if(pid==="+"){pid=uid("p");cfg.prods.push({id:pid,nome:n,cnpj:D.newc[n]||D.cnpj,papel:"principal",status:"ativo",plat,preco:""});D.map[n]=pid}cfg.imap.push({plat:D.tipo,nome:n,prod:pid})}
+ await saveCfg();
+ /* 2. vendas, mês a mês, lendo a versão mais nova antes de gravar */
+ const byK={};for(const r of D.rows){if(!r.st||D.map[r.name]==="-"||!D.sel[r.date.slice(0,7)])continue;(byK[r.date.slice(0,7)]=byK[r.date.slice(0,7)]||[]).push(r)}
+ let novas=0,reembs=0,apag=0;
+ for(const [k,rs] of Object.entries(byK)){let n0=0,r0=0,a0=0;const res=await mutate("emp-m-"+k,b=>{n0=0;r0=0;a0=0;let txs=clone((b&&b.txs)||[]);
+   if(D.delman){const before=txs.length;txs=txs.filter(t=>!(t.k==="venda"&&!t.ext&&t.plat===plat));a0=before-txs.length}
+   const idx=new Map();for(const t of txs)if(t.k==="venda"&&t.ext)for(const id of Object.keys(t.ext))idx.set(id,t);
+   for(const r of rs){const pid=D.map[r.name];const old=idx.get(r.id);
+    if(old){old.extR=old.extR||[];if(r.st==="reemb"&&!old.extR.includes(r.id)){old.reemb=r2((+old.reemb||0)+r.bruto);old.taxa=r2(Math.max(0,(+old.taxa||0)-(+old.ext[r.id]||0)));old.extR.push(r.id);r0++}continue}
+    let t=txs.find(x=>x.k==="venda"&&x.ext&&x.data===r.date&&x.prod===pid&&x.plat===plat);
+    if(!t){t={id:uid("t"),k:"venda",prod:pid,plat,data:r.date,qtd:0,bruto:0,taxa:0,reemb:0,obs:`Importado da ${D.tipo}`,ext:{},extR:[]};txs.push(t)}
+    t.qtd=(+t.qtd||0)+1;t.bruto=r2((+t.bruto||0)+r.bruto);
+    if(r.st==="pago"){t.taxa=r2((+t.taxa||0)+r.fee);t.ext[r.id]=r.fee}else{t.reemb=r2((+t.reemb||0)+r.bruto);t.ext[r.id]=0;t.extR=(t.extR||[]).concat(r.id);r0++}
+    idx.set(r.id,t);n0++}
+   return {kind:"emp-month",txs}});
+  months[k]=res.body.txs;novas+=n0;reembs+=r0;apag+=a0}
+ setFirstK();closeImport();render();
+ toast(`${novas} ${novas!==1?"vendas importadas":"venda importada"}${reembs?`, ${reembs} com reembolso`:""}${apag?`. ${apag} ${apag>1?"lançamentos feitos à mão foram apagados":"lançamento feito à mão foi apagado"}`:""}.`)
+}catch(err){$("ierr").textContent=err.message;btn.disabled=false}};
 
 /* ---------- configurar ---------- */
 const CFG_UI=[
