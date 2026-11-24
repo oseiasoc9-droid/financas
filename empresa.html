@@ -85,6 +85,9 @@ td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .mc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:none;text-align:left;width:100%}.mc:hover{border-color:var(--mute)}.mc.vazio{opacity:.55}
 .mc small{display:block;color:var(--mute);font-size:13px;font-weight:600}.mc small .badge{margin-left:6px}.mc b{display:block;font-weight:300;font-size:clamp(19px,2vw,24px);line-height:1.25;margin:3px 0;white-space:nowrap;font-variant-numeric:tabular-nums}.mc em{display:block;font-style:normal;color:var(--mute);font-size:12px;line-height:1.45}
 .tip[hidden]{display:none}
+.outc{color:var(--cout)}
+.pnview{margin:14px 0 4px}.pnview .hint{margin:8px 0 0}.seg.big button{padding:10px 16px;font-size:15px}@media (max-width:620px){.seg.big{display:flex}.seg.big button{flex:1;padding:10px 8px;font-size:14px}}
+.dreano .badge{margin-left:0;font-size:13px}.dreano tr.resrow td{padding-top:10px;padding-bottom:10px}.dreano tr.sec .sw{vertical-align:0;margin-right:2px}
 #pnt td,#pnt th,#pngt td,#pngt th{white-space:nowrap}
 .dreano td,.dreano th{padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}.dreano tr>:first-child{position:sticky;left:0;background:var(--panel);z-index:1;min-width:190px}@media (max-width:620px){#pnt tr>:first-child{min-width:130px;max-width:150px;white-space:normal;line-height:1.3}}
 .dreano tr.tot td{font-weight:700}.dreano tr.sub td:first-child{padding-left:18px;color:var(--mute)}.dreano tr.ind td{color:var(--mute);font-size:13px}.dreano tr.ind td:first-child{padding-left:18px}.dreano tr.sec td{color:var(--mute);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding-top:16px}.dreano th.tc,.dreano td.tc{border-left:1px solid var(--line)}.dreano th[data-k]{cursor:pointer}.dreano th.fut{opacity:.6}
@@ -299,13 +302,14 @@ return api})();
 <section id="panorama" hidden>
   <div class="phead"><h1 id="pnh">Panorama</h1><div class="month"><button class="btn ico" id="pyp" aria-label="Ano anterior">‹</button><span id="pyl"></span><button class="btn ico" id="pyn" aria-label="Próximo ano">›</button></div></div>
   <p class="sub" id="pns"></p>
+  <div class="pnview"><div class="seg big" id="pnv" role="group" aria-label="Como ver o ano"><button data-v="dre" aria-pressed="true">Resultado: deu lucro?</button><button data-v="caixa" aria-pressed="false">Caixa: tem dinheiro?</button></div><p class="hint" id="pnvh"></p></div>
   <div class="figs" id="pnf"></div>
   <div class="grid2">
-    <div class="panel"><h2>Entrou e saiu, mês a mês</h2><p class="hint">Entradas são as vendas e outras entradas. Saídas são tudo o que a empresa gastou: taxas, DAS, anúncios, estrutura e pró-labore. Toque numa coluna para ver os valores.</p><div class="leg"><span><i class="sw cin"></i>Entradas</span><span><i class="sw cout"></i>Saídas</span></div><div class="chart" id="pnc1"></div></div>
-    <div class="panel"><h2>Sobra acumulada no ano</h2><p class="hint" id="pnc2h">Quanto a empresa já guardou no ano, somando a sobra de cada mês.</p><div class="chart" id="pnc2"></div></div>
+    <div class="panel"><h2 id="pnc1t">Entrou e saiu, mês a mês</h2><p class="hint" id="pnc1h"></p><div class="leg"><span><i class="sw cin"></i>Entradas</span><span><i class="sw cout"></i>Saídas</span></div><div class="chart" id="pnc1"></div></div>
+    <div class="panel"><h2 id="pnc2t">Sobra acumulada no ano</h2><p class="hint" id="pnc2h"></p><div class="chart" id="pnc2"></div></div>
   </div>
-  <div class="panel"><h2>Cada mês</h2><p class="hint">Toque num mês para abrir o resultado completo dele no Painel.</p><div class="mgrid" id="pnm"></div></div>
-  <div class="panel"><div class="phead"><h2 id="pnth">DRE gerencial do ano</h2><div class="seg" id="pnv"><button data-v="dre" aria-pressed="true">Resultado: deu lucro?</button><button data-v="caixa" aria-pressed="false">Caixa: tem dinheiro?</button></div></div><p class="hint" id="pnthint" style="margin-top:6px"></p><div class="tscroll"><table class="dreano" id="pnt"></table></div></div>
+  <div class="panel"><h2>Cada mês</h2><p class="hint" id="pnmh"></p><div class="mgrid" id="pnm"></div></div>
+  <div class="panel"><h2 id="pnth">DRE gerencial do ano</h2><p class="hint" id="pnthint"></p><div class="tscroll"><table class="dreano" id="pnt"></table></div></div>
   <div class="panel"><h2>Total geral até aqui</h2><p class="hint" id="pngh"></p><div class="figs g4" id="pngf"></div><div class="tscroll"><table id="pngt"></table></div></div>
 </section>
 
@@ -574,59 +578,81 @@ function pnBars(L,W){const H=240,pl=44,pr=6,pt=10,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw
  L.forEach((m,i)=>{const cx=pl+gw*i+gw/2;g+=bar(cx-bw-1,m.ent,"bi")+bar(cx+1,m.sai,"bo")+`<text x="${cx}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text><rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas de cada mês">${g}</svg>`}
 /* gráfico 2: linha da sobra acumulada */
-function pnLine(L,W){const H=240,pl=44,pr=10,pt=12,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12;const pts=[];let acc=0;L.forEach((m,i)=>{acc+=m.R.res;if(m.tem||m.k<=nowK)pts.push([i,acc])});
+function pnLine(L,W){const H=240,pl=44,pr=10,pt=12,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12;const pts=[];let acc=0;L.forEach((m,i)=>{acc+=m.val;if(m.tem||m.k<=nowK)pts.push([i,acc])});
  const vs=pts.map(p=>p[1]).concat(0);let lo=Math.min(...vs),hi=Math.max(...vs);const span=niceMax(Math.max(hi-lo,1)/4);lo=Math.floor(lo/span)*span;hi=Math.max(lo+span,Math.ceil(hi/span)*span);const y=v=>pt+ih-(v-lo)/(hi-lo)*ih;let g="";
  for(let v=lo;v<=hi+span/2;v+=span){const yy=y(v);g+=`<line class="${Math.abs(v)<1e-9?"z":"gl"}" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${Mk(v)}</text>`}
  L.forEach((m,i)=>{g+=`<text x="${pl+gw*i+gw/2}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text>`});
  if(pts.length){g+=`<path class="ln" d="${pts.map((p,j)=>`${j?"L":"M"}${pl+gw*p[0]+gw/2},${y(p[1])}`).join("")}"/>`;g+=pts.map(p=>`<circle class="dot ${p[1]<0?"neg":""}" cx="${pl+gw*p[0]+gw/2}" cy="${y(p[1])}" r="4"/>`).join("")}
  L.forEach((m,i)=>{g+=`<rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
- return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sobra acumulada ao longo do ano">${g}</svg>`}
+ return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Acumulado ao longo do ano">${g}</svg>`}
 let PN=null;
 const pnW=id=>Math.max(300,Math.round($(id).clientWidth||720));
 function pnCharts(){if(!PN)return;$("pnc1").innerHTML=pnBars(PN.L,pnW("pnc1"));$("pnc2").innerHTML=pnLine(PN.L,pnW("pnc2"))}
 let pnRT=null;addEventListener("resize",()=>{clearTimeout(pnRT);pnRT=setTimeout(()=>{if(!$("panorama").hidden)pnCharts()},150)});
-function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa";$("pyl").textContent=y;
- const L=Array.from({length:12},(_,i)=>pnMonth(ym(y,i))),feitos=L.filter(m=>m.tem),T=pnSum(feitos);PN={L};
- let acc=0;const accs=L.map(m=>acc+=m.R.res);
+function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa",cx=pnView==="caixa";$("pyl").textContent=y;
+ document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));
+ const C=pnCaixa(y),L=Array.from({length:12},(_,i)=>{const m=pnMonth(ym(y,i));m.cx=C[m.k];return m}),feitos=L.filter(m=>m.tem),T=pnSum(feitos);
+ /* cada mês visto pela pergunta escolhida: resultado (deu lucro?) ou caixa (tem dinheiro?) */
+ const V=L.map(m=>cx?{k:m.k,m,ent:m.cx.ent,sai:m.cx.sai,val:m.cx.ger,tem:m.cx.ent>0.004||m.cx.sai>0.004}:{k:m.k,m,ent:m.ent,sai:m.sai,val:m.R.res,tem:m.tem});PN={L:V,cx};
+ const VF=V.filter(v=>v.tem),VP=VF.filter(v=>v.k<=nowK),sum=f=>VF.reduce((a,v)=>a+f(v),0);
  $("pnh").textContent=`Panorama de ${y}`;
- $("pns").innerHTML=feitos.length?`${esc(nome)} ${T.res>=0?"sobrou":"ficou no vermelho em"} <b class="${T.res>=0?"okc":"out"}">${M(Math.abs(T.res))}</b> em ${y}, com ${feitos.length} ${feitos.length>1?"meses lançados":"mês lançado"}. Tudo pelo mês em que a venda ou o gasto aconteceu, igual ao Painel.`:`Nenhum lançamento em ${y}${fc?" para esta empresa":""}.`;
+ $("pnvh").innerHTML=cx?"<b>Tem dinheiro?</b> Mostra quando o dinheiro entra e sai das contas de verdade. Uma compra no cartão feita em novembro aparece no mês em que a fatura vence. As vendas entram já sem as taxas.":"<b>Deu lucro?</b> Cada venda e cada gasto contam no mês em que aconteceram, igual ao Painel. Uma compra no cartão feita em novembro conta em novembro, mesmo que a fatura vença em dezembro.";
  const fig=(l,v,e,c="")=>`<div class="fig"><small>${l}</small><b class="${c}">${v}</b><em>${e}</em></div>`;
- $("pnf").innerHTML=fig("Faturamento no ano",M(T.fat),feitos.length?`média de ${M(T.fat/feitos.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(T.trafT),T.fat?`${pc(T.trafT/T.fat)} do faturamento`:"custo real, com impostos")+fig("Estrutura e pró-labore",M(T.estrT+T.socios),`estrutura ${M(T.estrT)} · pró-labore ${M(T.socios)}`)+fig("Impostos e taxas",M(T.hidden),T.fat?`${pc(T.hidden/T.fat)} do faturamento`:"tudo somado","amb")+fig("Sobra no ano",M(T.res),T.fat?`${pc(T.res/T.fat)} do faturamento`:"depois de tudo",T.res>=0?"okc":"out");
+ if(!cx){$("pns").innerHTML=feitos.length?`${esc(nome)} ${T.res>=0?"sobrou":"ficou no vermelho em"} <b class="${T.res>=0?"okc":"out"}">${M(Math.abs(T.res))}</b> em ${y}, com ${feitos.length} ${feitos.length>1?"meses lançados":"mês lançado"}.`:`Nenhum lançamento em ${y}${fc?" para esta empresa":""}.`;
+  $("pnf").innerHTML=fig("Faturamento no ano",M(T.fat),feitos.length?`média de ${M(T.fat/feitos.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(T.trafT),T.fat?`${pc(T.trafT/T.fat)} do faturamento`:"custo real, com impostos")+fig("Estrutura e pró-labore",M(T.estrT+T.socios),`estrutura ${M(T.estrT)} · pró-labore ${M(T.socios)}`)+fig("Impostos e taxas",M(T.hidden),T.fat?`${pc(T.hidden/T.fat)} do faturamento`:"tudo somado","amb")+fig("Sobra no ano",M(T.res),T.fat?`${pc(T.res/T.fat)} do faturamento`:"depois de tudo",T.res>=0?"okc":"out")}
+ else{const P=VP.reduce((a,v)=>({ent:a.ent+v.ent,sai:a.sai+v.sai,ger:a.ger+v.val,cartao:a.cartao+v.m.cx.cartao,conta:a.conta+v.m.cx.conta+v.m.cx.saque}),{ent:0,sai:0,ger:0,cartao:0,conta:0});
+  const fut=VF.filter(v=>v.k>nowK).reduce((a,v)=>a+v.sai,0);
+  $("pns").innerHTML=VP.length?`Até agora, em ${y}, entrou <b class="in">${M(P.ent)}</b> e saiu <b class="outc">${M(P.sai)}</b> das contas. O caixa ${P.ger>=0?"cresceu":"diminuiu"} <b class="${P.ger>=0?"okc":"out"}">${M(Math.abs(P.ger))}</b>.${fut>0.004?` Ainda vão sair ${M(fut)} em faturas e contas dos próximos meses.`:""}`:`Nenhuma entrada ou saída em ${y}${fc?" para esta empresa":""}.`;
+  $("pnf").innerHTML=fig("Entrou nas contas",M(P.ent),"vendas já sem as taxas e outras entradas","in")+fig("Faturas dos cartões",M(P.cartao),"pelo mês do vencimento","outc")+fig("Pagamentos da conta",M(P.conta),"pró-labore, contador, DAS etc.","outc")+fig("Caixa gerado no ano",M(P.ger),P.ent?`${pc(P.ger/P.ent)} do que entrou`:"entradas − saídas",P.ger>=0?"okc":"out")+fig("Média por mês",VP.length?M(P.ger/VP.length):"–",`${VP.length} ${VP.length>1?"meses":"mês"} até agora`,P.ger>=0?"okc":"out")}
+ $("pnc1t").textContent=cx?"Entrou e saiu das contas, mês a mês":"Entrou e saiu, mês a mês";
+ $("pnc1h").textContent=cx?"Entradas são as vendas (já sem taxas) e outras entradas. Saídas são as faturas dos cartões no mês do vencimento e o que saiu direto da conta. Toque numa coluna para ver os valores.":"Entradas são as vendas e outras entradas. Saídas são tudo o que a empresa gastou: taxas, DAS, anúncios, estrutura e pró-labore. Toque numa coluna para ver os valores.";
+ $("pnc2t").textContent=cx?"Caixa acumulado no ano":"Sobra acumulada no ano";
+ $("pnc2h").textContent=cx?"Quanto o dinheiro nas contas cresceu (ou diminuiu) desde janeiro, somando a geração de caixa de cada mês.":"Quanto a empresa já guardou no ano, somando a sobra de cada mês.";
+ $("pnmh").textContent=cx?"Quanto sobrou de dinheiro nas contas em cada mês. Meses futuros mostram as faturas que ainda vão vencer. Toque num mês para abrir o Painel dele.":"Quanto sobrou de lucro em cada mês. Toque num mês para abrir o resultado completo dele no Painel.";
  pnCharts();
- const best=feitos.length?feitos.reduce((a,b)=>b.R.res>a.R.res?b:a):null;
- $("pnm").innerHTML=L.map((m,i)=>{const fut=m.k>nowK;const tag=m.k===nowK?`<span class="badge info">agora</span>`:!m.tem?"":fut?`<span class="badge mute">previsto</span>`:m.R.res>=0?(best===m&&feitos.length>1?`<span class="badge ok">melhor mês</span>`:`<span class="badge ok">sobrou</span>`):`<span class="badge over">faltou</span>`;
-  return `<button type="button" class="mc ${m.tem?"":"vazio"}" data-k="${m.k}"><small>${cap(kName(m.k,{month:"long"}))}${tag}</small><b class="${!m.tem?"":m.R.res>=0?"okc":"out"}">${m.tem?M(m.R.res):"–"}</b><em>${m.tem?`entrou ${M(m.ent)}<br>saiu ${M(m.sai)}${m.R.adsTot?` · anúncio ${Mk(m.R.trafT)}`:""}`:"sem lançamentos"}</em></button>`}).join("");
+ const best=VP.length>1?VP.reduce((a,b)=>b.val>a.val?b:a):null;
+ $("pnm").innerHTML=V.map(v=>{const fut=v.k>nowK,m=v.m;const tag=v.k===nowK?`<span class="badge info">agora</span>`:!v.tem?"":fut?`<span class="badge mute">${cx?"a vencer":"previsto"}</span>`:v.val>=0?(best===v?`<span class="badge ok">melhor mês</span>`:`<span class="badge ok">${cx?"entrou mais":"sobrou"}</span>`):`<span class="badge over">${cx?"saiu mais":"faltou"}</span>`;
+  const det=!v.tem?"sem lançamentos":cx?`<span class="in">entrou ${M(v.ent)}</span><br><span class="outc">saiu ${M(v.sai)}</span>${m.cx.cartao>0.004?` · faturas ${Mk(m.cx.cartao)}`:""}`:`<span class="in">entrou ${M(v.ent)}</span><br><span class="outc">saiu ${M(v.sai)}</span>${m.R.adsTot?` · anúncio ${Mk(m.R.trafT)}`:""}`;
+  return `<button type="button" class="mc ${v.tem?"":"vazio"}" data-k="${v.k}"><small>${cap(kName(v.k,{month:"long"}))}${tag}</small><b class="${!v.tem?"":v.val>=0?"okc":"out"}">${v.tem?M(v.val):"–"}</b><em>${det}</em></button>`}).join("");
  pnTable(L,T,feitos);
  /* total geral: todos os meses com lançamento, até o mês atual */
  const ks=Object.keys(months).filter(k=>k<=nowK&&hasData(k)).sort(),G=ks.map(pnMonth),TG=pnSum(G),anos=[...new Set(ks.map(k=>k.slice(0,4)))];
- const gb=G.length?G.reduce((a,b)=>b.R.res>a.R.res?b:a):null,gw=G.length?G.reduce((a,b)=>b.R.res<a.R.res?b:a):null;
  $("pngh").textContent=G.length?`Tudo o que foi lançado, de ${kName(ks[0])} até ${kName(ks[ks.length-1])} (${G.length} ${G.length>1?"meses":"mês"}). Meses futuros ficam de fora.`:"Ainda não há meses lançados.";
- $("pngf").innerHTML=fig("Faturamento total",M(TG.fat),G.length?`média de ${M(TG.fat/G.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(TG.trafT),TG.fat?`${pc(TG.trafT/TG.fat)} do faturamento`:"–")+fig("Sobra total",M(TG.res),G.length?`média de ${M(TG.res/G.length)} por mês`:"–",TG.res>=0?"okc":"out")+fig("Melhor mês",gb?M(gb.R.res):"–",gb?`${kName(gb.k,{month:"long",year:"numeric"})}. Pior: ${kName(gw.k,{month:"short",year:"numeric"})}, ${M(gw.R.res)}`:"–",gb&&gb.R.res<0?"out":"okc");
- $("pngt").innerHTML=G.length?`<tr><th>Ano</th><th class="n">Meses</th><th class="n">Faturamento</th><th class="n">Anúncios e tráfego</th><th class="n">Impostos e taxas</th><th class="n">Estrutura e pró-labore</th><th class="n">Sobra</th></tr>`+anos.map(a=>{const S=pnSum(G.filter(m=>m.k.startsWith(a))),n=G.filter(m=>m.k.startsWith(a)).length;return `<tr class="rowc" data-y="${a}"><td>${a}</td><td class="n">${n}</td><td class="n in">${M(S.fat)}</td><td class="n">${M(S.trafT)}</td><td class="n">${M(S.hidden)}</td><td class="n">${M(S.estrT+S.socios)}</td><td class="n ${S.res>=0?"okc":"out"}">${M(S.res)}</td></tr>`}).join("")+`<tr class="tot"><td><b>Total geral</b></td><td class="n"><b>${G.length}</b></td><td class="n in"><b>${M(TG.fat)}</b></td><td class="n"><b>${M(TG.trafT)}</b></td><td class="n"><b>${M(TG.hidden)}</b></td><td class="n"><b>${M(TG.estrT+TG.socios)}</b></td><td class="n ${TG.res>=0?"okc":"out"}"><b>${M(TG.res)}</b></td></tr>`:""}
+ if(!cx){const gb=G.length?G.reduce((a,b)=>b.R.res>a.R.res?b:a):null,gw=G.length?G.reduce((a,b)=>b.R.res<a.R.res?b:a):null;
+  $("pngf").innerHTML=fig("Faturamento total",M(TG.fat),G.length?`média de ${M(TG.fat/G.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(TG.trafT),TG.fat?`${pc(TG.trafT/TG.fat)} do faturamento`:"–")+fig("Sobra total",M(TG.res),G.length?`média de ${M(TG.res/G.length)} por mês`:"–",TG.res>=0?"okc":"out")+fig("Melhor mês",gb?M(gb.R.res):"–",gb?`${kName(gb.k,{month:"long",year:"numeric"})}. Pior: ${kName(gw.k,{month:"short",year:"numeric"})}, ${M(gw.R.res)}`:"–",gb&&gb.R.res<0?"out":"okc");
+  $("pngt").innerHTML=G.length?`<tr><th>Ano</th><th class="n">Meses</th><th class="n">Faturamento</th><th class="n">Anúncios e tráfego</th><th class="n">Impostos e taxas</th><th class="n">Estrutura e pró-labore</th><th class="n">Sobra</th></tr>`+anos.map(a=>{const S=pnSum(G.filter(m=>m.k.startsWith(a))),n=G.filter(m=>m.k.startsWith(a)).length;return `<tr class="rowc" data-y="${a}"><td>${a}</td><td class="n">${n}</td><td class="n in">${M(S.fat)}</td><td class="n">${M(S.trafT)}</td><td class="n">${M(S.hidden)}</td><td class="n">${M(S.estrT+S.socios)}</td><td class="n ${S.res>=0?"okc":"out"}">${M(S.res)}</td></tr>`}).join("")+`<tr class="tot"><td><b>Total geral</b></td><td class="n"><b>${G.length}</b></td><td class="n in"><b>${M(TG.fat)}</b></td><td class="n"><b>${M(TG.trafT)}</b></td><td class="n"><b>${M(TG.hidden)}</b></td><td class="n"><b>${M(TG.estrT+TG.socios)}</b></td><td class="n ${TG.res>=0?"okc":"out"}"><b>${M(TG.res)}</b></td></tr>`:""}
+ else{const XS=[];for(const a of anos){const CC=pnCaixa(+a);for(const k in CC){const x=CC[k];if(k<=nowK&&(x.ent>0.004||x.sai>0.004))XS.push({k,...x})}}
+  const S=xs=>xs.reduce((a,x)=>({ent:a.ent+x.ent,cartao:a.cartao+x.cartao,conta:a.conta+x.conta+x.saque,sai:a.sai+x.sai,ger:a.ger+x.ger}),{ent:0,cartao:0,conta:0,sai:0,ger:0}),TX=S(XS);
+  const gb=XS.length?XS.reduce((a,b)=>b.ger>a.ger?b:a):null,gw=XS.length?XS.reduce((a,b)=>b.ger<a.ger?b:a):null;
+  $("pngf").innerHTML=fig("Entrou nas contas",M(TX.ent),XS.length?`média de ${M(TX.ent/XS.length)} por mês`:"–","in")+fig("Saiu das contas",M(TX.sai),`faturas ${M(TX.cartao)} · conta ${M(TX.conta)}`,"outc")+fig("Caixa gerado",M(TX.ger),XS.length?`média de ${M(TX.ger/XS.length)} por mês`:"–",TX.ger>=0?"okc":"out")+fig("Melhor mês de caixa",gb?M(gb.ger):"–",gb?`${kName(gb.k,{month:"long",year:"numeric"})}. Pior: ${kName(gw.k,{month:"short",year:"numeric"})}, ${M(gw.ger)}`:"–",gb&&gb.ger<0?"out":"okc");
+  $("pngt").innerHTML=XS.length?`<tr><th>Ano</th><th class="n">Meses</th><th class="n">Entrou</th><th class="n">Faturas dos cartões</th><th class="n">Pagamentos da conta</th><th class="n">Caixa gerado</th></tr>`+anos.map(a=>{const xs=XS.filter(x=>x.k.startsWith(a)),s=S(xs);return `<tr class="rowc" data-y="${a}"><td>${a}</td><td class="n">${xs.length}</td><td class="n in">${M(s.ent)}</td><td class="n outc">${M(s.cartao)}</td><td class="n outc">${M(s.conta)}</td><td class="n"><span class="badge ${s.ger>=0?"ok":"over"}">${M(s.ger)}</span></td></tr>`}).join("")+`<tr class="tot"><td><b>Total geral</b></td><td class="n"><b>${XS.length}</b></td><td class="n in"><b>${M(TX.ent)}</b></td><td class="n outc"><b>${M(TX.cartao)}</b></td><td class="n outc"><b>${M(TX.conta)}</b></td><td class="n"><span class="badge ${TX.ger>=0?"ok":"over"}">${M(TX.ger)}</span></td></tr>`:""}}
 /* fluxo de caixa: quando o dinheiro entra e sai de verdade. Vendas pela data da venda (líquidas, na plataforma); compras no cartão pelo vencimento da fatura; o resto pela data. Saques entre contas da empresa não contam. */
 function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:0,cartao:0,conta:0,saque:0};
  for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}
   else if(t.k==="ads"||t.k==="desp"){const c=pagCard(t);if(c)k=txDue(c,t).slice(0,7);if(C[k])C[k][c?"cartao":"conta"]+=txVal(t)}}
  for(const k in C){const x=C[k];x.ent=x.vendas+x.outras;x.sai=x.cartao+x.conta+x.saque;x.ger=x.ent-x.sai}return C}
 let pnView="dre";
-function pnTable(L,T,feitos){const y=cur.y;document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));
+function pnTable(L,T,feitos){const y=cur.y;
  const head=`<tr><th></th>${L.map(m=>`<th class="n${m.k>nowK?" fut":""}" data-k="${m.k}">${mAbbr(m.k)}</th>`).join("")}<th class="n tc">Total</th>${pnView==="dre"?`<th class="n">% fat.</th>`:""}</tr>`;
  const v=(x,neg)=>Math.abs(x)<0.005?"–":(neg?"− ":"")+M(x);
- if(pnView==="dre"){$("pnth").textContent=`DRE gerencial de ${y}`;$("pnthint").innerHTML="<b>Deu lucro?</b> Cada venda e cada gasto contam no mês em que aconteceram. Uma compra no cartão feita em novembro conta em novembro, mesmo que a fatura vença em dezembro. Toque no nome do mês para abrir o Painel dele.";
+ const pill=x=>Math.abs(x)<0.005?"–":`<span class="badge ${x>=0?"ok":"over"}">${M(x)}</span>`;
+ if(pnView==="dre"){$("pnth").textContent=`DRE gerencial de ${y}`;$("pnthint").textContent="O demonstrativo de resultado mês a mês, do faturamento até o lucro. Azul é o que entra, rosa é o que sai, e a última linha mostra o lucro de cada mês. Toque no nome do mês para abrir o Painel dele.";
   const P=x=>T.fat>0?`<td class="n">${pc(x/T.fat)}</td>`:"<td></td>";
-  const line=(l,f,cls="sub",neg=true,tot)=>{const t=L.reduce((a,m)=>a+(m.tem?f(m):0),0);return `<tr class="${cls}"><td>${l}</td>${L.map(m=>`<td class="n ${cls==="tot"&&m.tem?(f(m)>=0?"":"out"):""}">${m.tem?v(f(m),neg):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg)}</td>${P(t)}</tr>`};
+  /* tipo: "in" entrada, "out" saída, "tot" subtotal, "res" lucro final */
+  const line=(l,f,tipo)=>{const t=L.reduce((a,m)=>a+(m.tem?f(m):0),0);const cell=x=>tipo==="res"?pill(x):tipo==="out"?(Math.abs(x)<0.005?"–":`<span class="outc">− ${M(x)}</span>`):tipo==="in"?(Math.abs(x)<0.005?"–":`<span class="in">${M(x)}</span>`):`<span class="${x<0?"out":""}">${v(x)}</span>`;
+   return `<tr class="${tipo==="tot"||tipo==="res"?"tot":"sub"}${tipo==="res"?" resrow":""}"><td>${l}</td>${L.map(m=>`<td class="n">${m.tem?cell(f(m)):""}</td>`).join("")}<td class="n tc">${cell(t)}</td>${P(t)}</tr>`};
   const ind=(l,f,ft)=>`<tr class="ind"><td>${l}</td>${L.map(m=>`<td class="n">${m.tem?f(m.R,m):""}</td>`).join("")}<td class="n tc">${ft}</td><td></td></tr>`;
   const S=feitos.reduce((a,m)=>{for(const k of ["reemb","taxa","saque","das","recLiq","midia","adsTot","traf2","margem","lucroOp","prol","inss","qtd"])a[k]=(a[k]||0)+m.R[k];return a},{});
-  $("pnt").innerHTML=head+line("Faturamento bruto",m=>m.R.fat,"tot",false)
-   +line("Reembolsos e chargebacks",m=>m.R.reemb)+line("Taxas das plataformas",m=>m.R.taxa)+line("Taxas de saque e antecipação",m=>m.R.saque)+line("DAS (imposto sobre a venda)",m=>m.R.das)
-   +line("= Receita líquida",m=>m.R.recLiq,"tot",false)
-   +line("Anúncios (custo real, com impostos e IOF)",m=>m.R.adsTot)+line("Outros canais de tráfego",m=>m.R.traf2)
-   +line("= Margem de contribuição",m=>m.R.margem,"tot",false)
-   +line("Estrutura fixa (ferramentas, contador etc.)",m=>m.R.estrT)
-   +line("= Lucro operacional",m=>m.R.lucroOp,"tot",false)
-   +line("+ Outras entradas (rendimentos etc.)",m=>m.R.outras,"sub",false)
-   +line("Pró-labore e INSS",m=>m.socios)
-   +line("= Lucro líquido (sobra na empresa)",m=>m.R.res,"tot",false)
+  $("pnt").innerHTML=head+line("Faturamento bruto",m=>m.R.fat,"in").replace('class="sub"','class="tot"')
+   +line("Reembolsos e chargebacks",m=>m.R.reemb,"out")+line("Taxas das plataformas",m=>m.R.taxa,"out")+line("Taxas de saque e antecipação",m=>m.R.saque,"out")+line("DAS (imposto sobre a venda)",m=>m.R.das,"out")
+   +line("= Receita líquida",m=>m.R.recLiq,"tot")
+   +line("Anúncios (custo real, com impostos e IOF)",m=>m.R.adsTot,"out")+line("Outros canais de tráfego",m=>m.R.traf2,"out")
+   +line("= Margem de contribuição",m=>m.R.margem,"tot")
+   +line("Estrutura fixa (ferramentas, contador etc.)",m=>m.R.estrT,"out")
+   +line("= Lucro operacional",m=>m.R.lucroOp,"tot")
+   +line("+ Outras entradas (rendimentos etc.)",m=>m.R.outras,"in")
+   +line("Pró-labore e INSS",m=>m.socios,"out")
+   +line("= Lucro líquido (sobra na empresa)",m=>m.R.res,"res")
    +`<tr class="sec"><td>Indicadores</td>${L.map(()=>"<td></td>").join("")}<td class="tc"></td><td></td></tr>`
    +ind("Vendas (quantidade)",R=>R.qtd||"–",S.qtd||"–")
    +ind("Ticket médio",R=>R.qtd?M(R.fat/R.qtd):"–",S.qtd?M(T.fat/S.qtd):"–")
@@ -635,13 +661,15 @@ function pnTable(L,T,feitos){const y=cur.y;document.querySelectorAll("#pnv butto
    +ind("Margem de contribuição %",R=>R.fat?pc(R.margem/R.fat):"–",T.fat?pc(S.margem/T.fat):"–")
    +ind("Margem líquida %",R=>R.fat?pc(R.res/R.fat):"–",T.fat?pc(T.res/T.fat):"–")
    +ind("Impostos e taxas % do faturamento",R=>R.fat?pc(R.hidden/R.fat):"–",T.fat?pc(T.hidden/T.fat):"–")}
- else{const C=pnCaixa(y),K=L.map(m=>C[m.k]),tem=x=>x.ent||x.sai;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").innerHTML="<b>Tem dinheiro?</b> Mostra quando o dinheiro sai da conta de verdade. Uma compra no cartão feita em novembro aparece no mês em que a fatura vence. As vendas entram já sem as taxas, e os saques entre contas da empresa não contam.";
+ else{const K=L.map(m=>m.cx),tem=x=>x.ent>0.004||x.sai>0.004;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").textContent="O dinheiro que entrou e saiu das contas em cada mês. Azul é o que entrou, rosa é o que saiu. A etiqueta verde ou vermelha mostra se o mês terminou com mais ou menos dinheiro. Saques entre contas da empresa não contam, porque o dinheiro continua na empresa.";
   let acc=0;const accs=K.map(x=>acc+=x.ger);const sum=f=>K.reduce((a,x)=>a+f(x),0);
-  const line=(l,f,cls="sub",neg=true)=>{const t=sum(f);return `<tr class="${cls}"><td>${l}</td>${K.map(x=>`<td class="n ${cls==="tot"&&f(x)<0?"out":""}">${tem(x)?v(f(x),neg&&f(x)>0):""}</td>`).join("")}<td class="n tc ${cls==="tot"&&t<0?"out":""}">${v(t,neg&&t>0)}</td></tr>`};
+  const line=(l,f,tipo,cls="sub")=>{const t=sum(f);const cell=x=>tipo==="res"?pill(x):Math.abs(x)<0.005?"–":tipo==="in"?`<span class="in">${M(x)}</span>`:`<span class="outc">− ${M(x)}</span>`;return `<tr class="${cls}${tipo==="res"?" resrow":""}"><td>${l}</td>${K.map(x=>`<td class="n">${tem(x)?cell(f(x)):""}</td>`).join("")}<td class="n tc">${cell(t)}</td></tr>`};
+  const sec=(l,c)=>`<tr class="sec"><td><i class="sw ${c}"></i> ${l}</td>${K.map(()=>"<td></td>").join("")}<td class="tc"></td></tr>`;
   $("pnt").innerHTML=head
-   +line("Vendas recebidas (já sem taxas)",x=>x.vendas,"sub",false)+line("Outras entradas",x=>x.outras,"sub",false)+line("= Entradas",x=>x.ent,"tot",false)
-   +line("Faturas dos cartões (pelo vencimento)",x=>x.cartao)+line("Pagamentos direto da conta",x=>x.conta)+line("Taxas de saque",x=>x.saque)+line("= Saídas",x=>x.sai,"tot",false)
-   +line("= Geração de caixa do mês",x=>x.ger,"tot",false)
+   +sec("Entrou","cin")+line("Vendas recebidas (já sem taxas)",x=>x.vendas,"in")+line("Outras entradas",x=>x.outras,"in")+line("Total que entrou",x=>x.ent,"in","tot")
+   +sec("Saiu","cout")+line("Faturas dos cartões (no vencimento)",x=>x.cartao,"out")+line("Pagamentos direto da conta",x=>x.conta,"out")+line("Taxas de saque",x=>x.saque,"out")+line("Total que saiu",x=>x.sai,"out","tot")
+   +`<tr class="sec"><td>Resultado do caixa</td>${K.map(()=>"<td></td>").join("")}<td class="tc"></td></tr>`
+   +line("Sobrou no mês (entrou − saiu)",x=>x.ger,"res","tot")
    +`<tr class="ind"><td>Acumulado no ano</td>${K.map((x,i)=>`<td class="n ${accs[i]<0?"out":""}">${tem(x)||L[i].k<=nowK?M(accs[i]):""}</td>`).join("")}<td class="n tc"></td></tr>`}}
 $("pnv").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;pnView=b.dataset.v;renderPanorama()});
 const pnGo=k=>{cur={y:+k.slice(0,4),m:+k.slice(5,7)-1};location.hash="#painel";render();scrollTo({top:0,behavior:"smooth"})};
@@ -649,8 +677,8 @@ $("pyp").onclick=()=>{cur={y:cur.y-1,m:cur.m};render()};$("pyn").onclick=()=>{cu
 $("pnm").addEventListener("click",e=>{const r=e.target.closest("[data-k]");if(r)pnGo(r.dataset.k)});$("pnt").addEventListener("click",e=>{const r=e.target.closest("th[data-k]");if(r)pnGo(r.dataset.k)});
 $("pngt").addEventListener("click",e=>{const r=e.target.closest("[data-y]");if(!r)return;cur={y:+r.dataset.y,m:cur.m};render();scrollTo({top:0,behavior:"smooth"})});
 /* dica ao passar o dedo ou o mouse nos gráficos */
-for(const id of ["pnc1","pnc2"]){const box=$(id);const show=e=>{const h=e.target.closest(".hit");if(!h||!PN)return;pnTipOff(box);h.classList.add("on");const i=+h.dataset.i,m=PN.L[i];let a=0;for(let j=0;j<=i;j++)a+=PN.L[j].R.res;const br=box.getBoundingClientRect(),hr=h.getBoundingClientRect();
- const html=id==="pnc1"?`<b>${cap(kName(m.k))}</b><div><span><i style="background:var(--cin)"></i>Entradas</span>${M(m.ent)}</div><div><span><i style="background:var(--cout)"></i>Saídas</span>${M(m.sai)}</div><div><span>Sobra</span>${M(m.R.res)}</div>`:`<b>${cap(kName(m.k))}</b><div><span>Sobra do mês</span>${M(m.R.res)}</div><div><span>Acumulado</span>${M(a)}</div>`;
+for(const id of ["pnc1","pnc2"]){const box=$(id);const show=e=>{const h=e.target.closest(".hit");if(!h||!PN)return;pnTipOff(box);h.classList.add("on");const i=+h.dataset.i,m=PN.L[i];let a=0;for(let j=0;j<=i;j++)a+=PN.L[j].val;const nm=PN.cx?"Caixa do mês":"Sobra do mês";const br=box.getBoundingClientRect(),hr=h.getBoundingClientRect();
+ const html=id==="pnc1"?`<b>${cap(kName(m.k))}</b><div><span><i style="background:var(--cin)"></i>Entradas</span>${M(m.ent)}</div><div><span><i style="background:var(--cout)"></i>Saídas</span>${M(m.sai)}</div><div><span>${PN.cx?"Sobrou no caixa":"Sobra"}</span>${M(m.val)}</div>`:`<b>${cap(kName(m.k))}</b><div><span>${nm}</span>${M(m.val)}</div><div><span>Acumulado</span>${M(a)}</div>`;
  pnTip(box,hr.left-br.left+hr.width/2,hr.top-br.top+20,html)};box.addEventListener("pointerover",show);box.addEventListener("click",show);box.addEventListener("pointerleave",()=>pnTipOff(box))}
 
 /* ---------- lançamentos ---------- */
