@@ -71,6 +71,7 @@ th{color:var(--mute);font-size:13px;font-weight:600}
 td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .tscroll{overflow-x:auto}
 .dre td{padding:7px 6px}
+table tr.ctot td{border-top:1px solid var(--line);padding-top:10px}
 .dre tr.tot td{font-weight:700;border-bottom:1px solid var(--line);padding-top:10px}
 .dre tr.sub td:first-child{padding-left:18px;color:var(--mute)}
 .dre tr.res td{font-weight:700;font-size:17px}
@@ -330,7 +331,7 @@ return api})();
 <section id="contas" hidden>
   <h1>Contas e cartões</h1><p class="sub">Saldo de cada conta pelo que foi lançado. Se não bater com o banco ou a plataforma, use “Ajustar saldo”.</p>
   <div class="panel"><h2>Contas e plataformas</h2><div class="tscroll"><table id="ctab"></table></div></div>
-  <div class="panel"><h2>Faturas dos cartões</h2><p class="hint">Cada compra cai na fatura certa pelo dia em que o cartão fecha. Pagar a fatura tira o dinheiro da conta escolhida no cartão.</p><div id="fats"></div></div>
+  <div class="panel"><h2 id="fath">Faturas dos cartões</h2><p class="hint">Cada compra cai na fatura certa pelo dia em que o cartão fecha. Pagar a fatura tira o dinheiro da conta escolhida no cartão.</p><div id="fats"></div></div>
 </section>
 
 <section id="impostos" hidden>
@@ -739,8 +740,13 @@ function renderProds(){document.querySelectorAll("#pper button").forEach(b=>b.se
 $("pper").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;pper=b.dataset.p;renderProds()});
 
 /* ---------- contas ---------- */
-function renderContas(){const S=saldos();$("ctab").innerHTML=`<tr><th>Conta</th><th>Tipo</th><th>Empresa</th><th class="n">Saldo</th><th></th></tr>`+cfg.contas.filter(c=>!fc||c.cnpj===fc).map(c=>`<tr><td>${esc(c.nome)}</td><td><small>${c.tipo}</small></td><td><small>${esc((cnpjOf(c.cnpj)||{}).nome||"")}</small></td><td class="n ${S[c.nome]<0?"out":""}"><b>${M(S[c.nome])}</b></td><td class="n"><button class="btn sm" data-aj="${esc(c.nome)}">Ajustar saldo</button></td></tr>`).join("");
- const F=faturas().filter(f=>!f.quit||dDiff(f.due)>-45);$("fats").innerHTML=F.length?`<div class="tscroll"><table><tr><th>Cartão</th><th>Fecha</th><th>Vence</th><th class="n">Itens</th><th class="n">Total</th><th></th></tr>`+F.map(f=>`<tr><td>${esc(f.card)}</td><td>${dShort(f.close)}</td><td>${dShort(f.due)}${f.quit?`<span class="badge ok">paga</span>`:dDiff(f.due)<0?`<span class="badge over">atrasada</span>`:f.close<=todayS?`<span class="badge pend">fechada</span>`:`<span class="badge info">aberta</span>`}</td><td class="n">${f.itens.length}</td><td class="n"><b>${M(f.total)}</b>${f.pago&&!f.quit?`<br><small class="hint">pago ${M(f.pago)}</small>`:""}</td><td class="n">${f.quit?"":`<button class="btn sm" data-pf="${esc(f.card+"|"+f.due)}">Pagar</button>`}</td></tr>`).join("")+`</table></div>`:`<p class="empty">Nenhuma compra no cartão lançada.</p>`}
+function renderContas(){const S=saldos(),CS=cfg.contas.filter(c=>!fc||c.cnpj===fc),sum=f=>r2(CS.filter(f).reduce((a,c)=>a+(S[c.nome]||0),0)),tB=sum(c=>c.tipo==="banco"),tP=sum(c=>c.tipo!=="banco"),tT=r2(tB+tP);
+ $("ctab").innerHTML=`<tr><th>Conta</th><th>Tipo</th><th>Empresa</th><th class="n">Saldo hoje</th><th></th></tr>`+CS.map(c=>`<tr><td>${esc(c.nome)}</td><td><small>${c.tipo}</small></td><td><small>${esc((cnpjOf(c.cnpj)||{}).nome||"")}</small></td><td class="n ${S[c.nome]<0?"out":""}"><b>${M(S[c.nome])}</b></td><td class="n"><button class="btn sm" data-aj="${esc(c.nome)}">Ajustar saldo</button></td></tr>`).join("")+(CS.length?`<tr class="ctot"><td colspan="3"><b>Total</b><br><small class="hint">bancos ${M(tB)} · plataformas ${M(tP)}</small></td><td class="n ${tT<0?"out":""}"><b>${M(tT)}</b></td><td></td></tr>`:"");
+ const k=curK(),FA=faturas(),F=FA.filter(f=>f.due.slice(0,7)===k),tot=r2(F.reduce((a,f)=>a+f.total,0)),pg=r2(F.reduce((a,f)=>a+Math.min(f.pago,f.total),0)),falta=r2(tot-pg);
+ const atr=FA.filter(f=>!f.quit&&f.due.slice(0,7)<k&&dDiff(f.due)<0),atrV=r2(atr.reduce((a,f)=>a+f.total-f.pago,0));
+ $("fath").textContent=`Faturas que vencem em ${kName(k)}`;
+ $("fats").innerHTML=(F.length?`<div class="tscroll"><table><tr><th>Cartão</th><th>Fecha</th><th>Vence</th><th class="n">Itens</th><th class="n">Total</th><th></th></tr>`+F.map(f=>`<tr><td>${esc(f.card)}</td><td>${dShort(f.close)}</td><td>${dShort(f.due)}${f.quit?`<span class="badge ok">paga</span>`:dDiff(f.due)<0?`<span class="badge over">atrasada</span>`:f.close<=todayS?`<span class="badge pend">fechada</span>`:`<span class="badge info">aberta</span>`}</td><td class="n">${f.itens.length}</td><td class="n"><b>${M(f.total)}</b>${f.pago&&!f.quit?`<br><small class="hint">pago ${M(f.pago)}</small>`:""}</td><td class="n">${f.quit?"":`<button class="btn sm" data-pf="${esc(f.card+"|"+f.due)}">Pagar</button>`}</td></tr>`).join("")+`<tr class="ctot"><td colspan="4"><b>Total do mês</b>${pg>0.004?`<br><small class="hint">já pago ${M(pg)} · falta ${M(falta)}</small>`:""}</td><td class="n"><b>${M(tot)}</b></td><td></td></tr></table></div>`:`<p class="empty">Nenhuma fatura vence em ${kName(k)}.</p>`)
+  +(atr.length?`<p class="hint" style="margin:10px 0 0"><span class="badge over">atenção</span> ${atr.length>1?`${atr.length} faturas de meses anteriores ainda não foram pagas`:`1 fatura de mês anterior ainda não foi paga`} (${atr.map(f=>`${esc(f.card)}, venceu ${dShort(f.due)}`).join("; ")}): ${M(atrV)}.</p>`:"")}
 $("ctab").addEventListener("click",e=>{const b=e.target.closest("[data-aj]");if(b)openAjuste(b.dataset.aj)});
 $("fats").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;const f=faturas().find(x=>x.card+"|"+x.due===b.dataset.pf);if(f)openPagFat(f)});
 
