@@ -643,7 +643,9 @@ function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa",cx=p
 /* fluxo de caixa: quando o dinheiro entra e sai de verdade. Vendas pela data da venda (líquidas, na plataforma); compras no cartão pelo vencimento da fatura; o resto pela data. Saques entre contas da empresa não contam. */
 function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:0,cartao:0,conta:0,saque:0};
  for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}
-  else if(t.k==="ads"||t.k==="desp"){const c=pagCard(t);if(c)k=txDue(c,t).slice(0,7);if(C[k])C[k][c?"cartao":"conta"]+=txVal(t)}}
+  else if(t.k==="ads"||t.k==="desp"){const c=pagCard(t);if(c)k=txDue(c,t).slice(0,7);else if(t.pago===false&&t.data<todayS)k=nowK;if(C[k])C[k][c?"cartao":"conta"]+=txVal(t)}}
+ /* DAS que ainda vai vencer (estimado ou já calculado) entra no mês do vencimento, como pagamento da conta */
+ if(y>=+nowK.slice(0,4))for(const v of vencList(`${y}-12-31`))if(!v.fat&&!v.tx){const k=v.data<todayS?nowK:v.data.slice(0,7);if(C[k])C[k].conta+=v.valor}
  for(const k in C){const x=C[k];x.ent=x.vendas+x.outras;x.sai=x.cartao+x.conta+x.saque;x.ger=x.ent-x.sai}return C}
 let pnView="dre";
 /* agenda de pagamentos: cada conta a pagar até o fim do ano e quanto fica no caixa depois dela */
