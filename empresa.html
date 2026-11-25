@@ -493,9 +493,13 @@ const despTot=t=>r2((+t.valor||0)+despIof(t));
 const vendaLiq=t=>r2((+t.bruto||0)-(+t.taxa||0)-(+t.reemb||0));
 function platTaxa(plat,bruto,qtd){const p=platOf(plat);if(!p)return 0;return r2((+bruto||0)*(+p.pct||0)/100+(+p.fixo||0)*(+qtd||0))}
 /* fatura: a compra cai na fatura que fecha depois dela (ou na indicada em t.fat, para lançamentos vindos da fatura do banco) */
-function closeOf(card,due){const c=cardOf(card);if(!c)return due;const k=due.slice(0,7);return +c.vence>+c.fecha?dayIn(k,c.fecha):dayIn(addM(k,-1),c.fecha)}
+/* vencimento no fim de semana passa para segunda-feira (os bancos fazem assim). fatMes: mês "nominal" da fatura, mesmo quando o vencimento real foi empurrado para o mês seguinte */
+const bizDay=d=>{const w=new Date(d+"T12:00").getDay();return w===6?addD(d,2):w===0?addD(d,1):d};
+function fatMes(card,due){const c=cardOf(card),k=due.slice(0,7);return c&&+due.slice(8)<=5&&+c.vence>=25?addM(k,-1):k}
+const fatKey=(card,due)=>card+"|"+fatMes(card,due);
+function closeOf(card,due){const c=cardOf(card);if(!c)return due;const k=fatMes(card,due);return +c.vence>+c.fecha?dayIn(k,c.fecha):dayIn(addM(k,-1),c.fecha)}
 const txDue=(card,t)=>t.fat||dueOf(card,t.data);
-function dueOf(card,d){const c=cardOf(card);if(!c)return d;let k=addM(d.slice(0,7),-1);for(let i=0;i<4;i++,k=addM(k,1)){const due=dayIn(k,c.vence);if(d<closeOf(card,due))return due}return dayIn(addM(d.slice(0,7),2),c.vence)}
+function dueOf(card,d){const c=cardOf(card);if(!c)return d;let k=addM(d.slice(0,7),-1);for(let i=0;i<4;i++,k=addM(k,1)){const due=bizDay(dayIn(k,c.vence));if(d<closeOf(card,due))return due}return bizDay(dayIn(addM(d.slice(0,7),2),c.vence))}
 const txVal=t=>t.k==="ads"?adsSplit(t).total:t.k==="desp"?despTot(t):t.k==="venda"?vendaLiq(t):(+t.valor||0);
 
 /* ---------- DAS ---------- */
@@ -529,8 +533,9 @@ function saldos(ate){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;co
   else if(t.k==="transf"){add(t.de,-((+t.valor||0)+(+t.taxa||0)));add(t.para,+t.valor||0)}
   else if(t.k==="rec"||t.k==="ajuste")add(t.conta,+t.valor||0)}
  for(const n in S)S[n]=r2(S[n]);return S}
-function faturas(){const F={};for(const t of all()){const c=pagCard(t);if(!c||(t.k!=="ads"&&t.k!=="desp"))continue;if(fc&&txCnpj(t)!==fc)continue;const due=txDue(c,t),key=c+"|"+due;const f=F[key]=F[key]||{card:c,due,close:closeOf(c,due),total:0,itens:[],pago:0};f.total+=txVal(t);f.itens.push(t)}
- for(const t of all())if(t.k==="pagfat"){const f=F[t.card+"|"+t.due];if(f)f.pago+=+t.valor||0}
+function faturas(){const F={};for(const t of all()){const c=pagCard(t);if(!c||(t.k!=="ads"&&t.k!=="desp"))continue;if(fc&&txCnpj(t)!==fc)continue;const due=txDue(c,t),key=fatKey(c,due);const f=F[key]=F[key]||{card:c,due,close:closeOf(c,due),total:0,itens:[],pago:0};if(due>f.due){f.due=due;f.close=closeOf(c,due)}f.total+=txVal(t);f.itens.push(t)}
+ /* a mesma fatura pode vir com o vencimento do banco (dia útil) e com o calculado: as duas viram uma só, pelo mês */
+ for(const t of all())if(t.k==="pagfat"){const f=F[fatKey(t.card,t.due)];if(f)f.pago+=+t.valor||0}
  return Object.values(F).map(f=>({...f,total:r2(f.total),pago:r2(f.pago),quit:f.pago>=f.total-0.01})).sort((a,b)=>a.due.localeCompare(b.due))}
 function vencList(until){const L=[];for(const f of faturas())if(!f.quit&&f.due<=until)L.push({data:f.due,nome:`Fatura ${f.card}`,valor:r2(f.total-f.pago),det:`fecha ${dShort(f.close)} · ${f.itens.length} ${f.itens.length>1?"itens":"item"}`,fat:f});
  for(const t of all())if((t.k==="desp"||t.k==="ads")&&pagConta(t)&&t.pago===false&&t.data<=until&&pass(t))L.push({data:t.data,nome:t.k==="ads"?"Anúncio":t.desc,valor:txVal(t),det:pagConta(t),tx:t});
@@ -646,8 +651,8 @@ function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:
  for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}else if(t.k==="ajuste"){if(C[k])C[k].aj+=+t.valor||0}
   else if((t.k==="ads"||t.k==="desp")&&!pagCard(t)){if(t.pago===false&&t.data<todayS)k=nowK;if(C[k])C[k].conta+=txVal(t)}}
  /* faturas: o que já foi pago sai na data do pagamento (às vezes antes do vencimento); o que falta pagar sai no vencimento */
- const pf={};for(const t of all())if(t.k==="pagfat")(pf[t.card+"|"+t.due]=pf[t.card+"|"+t.due]||[]).push(t);
- for(const f of faturas()){let rest=f.total;for(const p of (pf[f.card+"|"+f.due]||[]).sort((a,b)=>a.data.localeCompare(b.data))){const v=Math.min(rest,+p.valor||0);if(v<=0)break;rest-=v;const k=p.data.slice(0,7);if(C[k])C[k].cartao+=v}
+ const pf={};for(const t of all())if(t.k==="pagfat"){const q=fatKey(t.card,t.due);(pf[q]=pf[q]||[]).push(t)}
+ for(const f of faturas()){let rest=f.total;for(const p of (pf[fatKey(f.card,f.due)]||[]).sort((a,b)=>a.data.localeCompare(b.data))){const v=Math.min(rest,+p.valor||0);if(v<=0)break;rest-=v;const k=p.data.slice(0,7);if(C[k])C[k].cartao+=v}
   if(rest>0.01&&!f.quit){const k=f.due<todayS?nowK:f.due.slice(0,7);if(C[k])C[k].cartao+=rest}}
  /* DAS que ainda vai vencer (estimado ou já calculado) entra no mês do vencimento, como pagamento da conta */
  if(y>=+nowK.slice(0,4))for(const v of vencList(`${y}-12-31`))if(!v.fat&&!v.tx){const k=v.data<todayS?nowK:v.data.slice(0,7);if(C[k])C[k].conta+=v.valor}
