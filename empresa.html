@@ -80,7 +80,7 @@ table tr.ctot td{border-top:1px solid var(--line);padding-top:10px}
 :root{--cin:#2a8fd8;--cout:#f0527f}[data-theme=light]{--cin:#0a6fc2;--cout:#d6336c}
 .leg{display:flex;gap:16px;font-size:13px;color:var(--mute);margin:-4px 0 6px}.leg span{display:inline-flex;align-items:center;gap:6px}.sw{width:10px;height:10px;border-radius:3px;display:inline-block}.sw.cin{background:var(--cin)}.sw.cout{background:var(--cout)}
 .chart{position:relative}.chart svg{display:block;width:100%;height:auto;overflow:visible}.chart text{fill:var(--mute);font-size:11px;font-family:inherit}.chart .gl{stroke:var(--line);stroke-width:1}.chart .z{stroke:var(--mute);stroke-width:1;opacity:.6}
-.chart .bi{fill:var(--cin)}.chart .bo{fill:var(--cout)}.chart .hit{fill:transparent;cursor:pointer}.chart .hit:hover,.chart .hit.on{fill:rgba(143,211,255,.07)}.chart .ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}.chart .dot{fill:var(--ink);stroke:var(--panel);stroke-width:2}.chart .dot.neg{fill:var(--pink)}
+.chart .bi{fill:var(--cin)}.chart .bo{fill:var(--cout)}.chart .hit{fill:transparent;cursor:pointer}.chart .hit:hover,.chart .hit.on{fill:rgba(143,211,255,.07)}.chart .ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}.chart .dot.fut{fill:var(--panel);stroke:var(--ink)}.chart .dot{fill:var(--ink);stroke:var(--panel);stroke-width:2}.chart .dot.neg{fill:var(--pink)}
 .tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;white-space:nowrap;transform:translate(-50%,-100%);z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.25)}.tip b{display:block;font-size:13px;margin-bottom:2px}.tip div{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
 .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media (max-width:980px){.mgrid{grid-template-columns:repeat(3,1fr)}}@media (max-width:620px){.mgrid{grid-template-columns:repeat(2,1fr)}}
 .mc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:none;text-align:left;width:100%}.mc:hover{border-color:var(--mute)}.mc.vazio{opacity:.55}
@@ -95,6 +95,7 @@ table tr.ctot td{border-top:1px solid var(--line);padding-top:10px}
 .rowc{cursor:pointer}.rowc:hover td{background:rgba(143,211,255,.05)}
 .empty{color:var(--mute);font-size:14px;padding:6px 0}
 .big{font-weight:300;font-size:30px;line-height:1.2}
+.ag{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.ag:last-child{border-bottom:0}.ag small{display:block;color:var(--mute);font-size:13px;margin-top:2px}.ag .n{text-align:right;white-space:nowrap}.ag b{font-weight:500}.ag>span:first-child{min-width:0;flex:1}.ag>b{white-space:nowrap;flex-shrink:0}.ag.tot{font-weight:600}.ag.tot small{font-weight:400}.ag.tot .badge{margin-left:0}
 .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .kv:last-child{border-bottom:0}
 .kv span small{display:block;color:var(--mute);font-size:13px}
@@ -305,6 +306,7 @@ return api})();
   <p class="sub" id="pns"></p>
   <div class="pnview"><div class="seg big" id="pnv" role="group" aria-label="Como ver o ano"><button data-v="dre" aria-pressed="true">Resultado: deu lucro?</button><button data-v="caixa" aria-pressed="false">Caixa: tem dinheiro?</button></div><p class="hint" id="pnvh"></p></div>
   <div class="figs" id="pnf"></div>
+  <div class="panel" id="pnpos" hidden><h2>Dinheiro em caixa × contas a pagar</h2><p class="hint" id="pnposh"></p><div id="pnpost"></div></div>
   <div class="grid2">
     <div class="panel"><h2 id="pnc1t">Entrou e saiu, mês a mês</h2><p class="hint" id="pnc1h"></p><div class="leg"><span><i class="sw cin"></i>Entradas</span><span><i class="sw cout"></i>Saídas</span></div><div class="chart" id="pnc1"></div></div>
     <div class="panel"><h2 id="pnc2t">Sobra acumulada no ano</h2><p class="hint" id="pnc2h"></p><div class="chart" id="pnc2"></div></div>
@@ -520,8 +522,8 @@ function calc(k){const T=inMonth(k).filter(pass);const R={fat:0,qtd:0,reemb:0,ta
 function breakeven(R){const fator=R.midia>0?R.adsTot/R.midia:1.1383;const tx=R.fat>0?(R.taxa+R.reemb)/R.fat:0.06;const das=R.fat>0?R.das/R.fat:0.06;const m=1-tx-das;return m>0?fator/m:NaN}
 
 /* ---------- saldos ---------- */
-function saldos(){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;const add=(n,v)=>{if(n in S)S[n]+=v};
- for(const t of all()){if(t.k==="venda"){const p=platOf(t.plat);if(p)add(p.conta,vendaLiq(t))}
+function saldos(ate){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;const add=(n,v)=>{if(n in S)S[n]+=v};
+ for(const t of all()){if(ate&&t.data>ate)continue;if(t.k==="venda"){const p=platOf(t.plat);if(p)add(p.conta,vendaLiq(t))}
   else if((t.k==="ads"||t.k==="desp")&&pagConta(t)&&t.pago!==false)add(pagConta(t),-txVal(t));
   else if(t.k==="pagfat")add(pagConta(t),-(+t.valor||0));
   else if(t.k==="transf"){add(t.de,-((+t.valor||0)+(+t.taxa||0)));add(t.para,+t.valor||0)}
@@ -534,6 +536,12 @@ function vencList(until){const L=[];for(const f of faturas())if(!f.quit&&f.due<=
  for(const t of all())if((t.k==="desp"||t.k==="ads")&&pagConta(t)&&t.pago===false&&t.data<=until&&pass(t))L.push({data:t.data,nome:t.k==="ads"?"Anúncio":t.desc,valor:txVal(t),det:pagConta(t),tx:t});
  for(const c of cfg.cnpjs){if(fc&&c.id!==fc)continue;for(let i=-3;i<=0;i++){const k=addM(nowK,i),due=dayIn(addM(k,1),20);if(due>until||!firstK||k<firstK)continue;const v=dasMonth(k,c);const pago=inMonth(addM(k,1)).filter(t=>t.k==="desp"&&t.cat==="DAS (pagamento)"&&t.cnpj===c.id).reduce((a,t)=>a+despTot(t),0);if(v>0.004&&pago<v-0.01)L.push({data:due,nome:`DAS ${c.nome}`,valor:r2(v-pago),det:`referente a ${kName(k,{month:"long"})}`})}}
  return L.sort((a,b)=>a.data.localeCompare(b.data))}
+/* posição de caixa: o dinheiro que está nas contas hoje contra o que ainda vai sair (faturas, DAS e contas pendentes) */
+const contasF=()=>cfg.contas.filter(c=>!fc||c.cnpj===fc);
+function caixaHoje(){const S=saldos();let banco=0,plat=0;for(const c of contasF()){const v=S[c.nome]||0;if(c.tipo==="plataforma")plat+=v;else banco+=v}return {banco:r2(banco),plat:r2(plat),tot:r2(banco+plat)}}
+const fimMes=k=>dayIn(k,31);
+/* fim de um mês passado: saldo real naquela data. Mês atual ou futuro: dinheiro de hoje menos o que vence até lá, sem contar vendas novas */
+function saldoFim(k){if(k<nowK){const S=saldos(fimMes(k));return r2(contasF().reduce((a,c)=>a+(S[c.nome]||0),0))}return r2(caixaHoje().tot-vencList(fimMes(k)).reduce((a,v)=>a+v.valor,0))}
 function vtag(d){const n=dDiff(d);return n<0?`<span class="badge over">atrasado ${-n}d</span>`:n===0?`<span class="badge over">vence hoje</span>`:n<=3?`<span class="badge pend">em ${n} ${n>1?"dias":"dia"}</span>`:`<span class="badge info">em ${n} dias</span>`}
 
 /* ---------- render ---------- */
@@ -579,11 +587,11 @@ function pnBars(L,W){const H=240,pl=44,pr=6,pt=10,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw
  L.forEach((m,i)=>{const cx=pl+gw*i+gw/2;g+=bar(cx-bw-1,m.ent,"bi")+bar(cx+1,m.sai,"bo")+`<text x="${cx}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text><rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas e saídas de cada mês">${g}</svg>`}
 /* gráfico 2: linha da sobra acumulada */
-function pnLine(L,W){const H=240,pl=44,pr=10,pt=12,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12;const pts=[];let acc=0;L.forEach((m,i)=>{acc+=m.val;if(m.tem||m.k<=nowK)pts.push([i,acc])});
+function pnLine(L,W){const H=240,pl=44,pr=10,pt=12,pb=24,iw=W-pl-pr,ih=H-pt-pb,gw=iw/12;const pts=[];let acc=0;L.forEach((m,i)=>{acc+=m.val;if(m.abs!=null)pts.push([i,m.abs,m.k>=nowK]);else if(m.tem||m.k<=nowK)pts.push([i,acc])});
  const vs=pts.map(p=>p[1]).concat(0);let lo=Math.min(...vs),hi=Math.max(...vs);const span=niceMax(Math.max(hi-lo,1)/4);lo=Math.floor(lo/span)*span;hi=Math.max(lo+span,Math.ceil(hi/span)*span);const y=v=>pt+ih-(v-lo)/(hi-lo)*ih;let g="";
  for(let v=lo;v<=hi+span/2;v+=span){const yy=y(v);g+=`<line class="${Math.abs(v)<1e-9?"z":"gl"}" x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}"/><text x="${pl-6}" y="${yy+4}" text-anchor="end">${Mk(v)}</text>`}
  L.forEach((m,i)=>{g+=`<text x="${pl+gw*i+gw/2}" y="${H-6}" text-anchor="middle">${mAbbr(m.k)}</text>`});
- if(pts.length){g+=`<path class="ln" d="${pts.map((p,j)=>`${j?"L":"M"}${pl+gw*p[0]+gw/2},${y(p[1])}`).join("")}"/>`;g+=pts.map(p=>`<circle class="dot ${p[1]<0?"neg":""}" cx="${pl+gw*p[0]+gw/2}" cy="${y(p[1])}" r="4"/>`).join("")}
+ if(pts.length){g+=`<path class="ln" d="${pts.map((p,j)=>`${j?"L":"M"}${pl+gw*p[0]+gw/2},${y(p[1])}`).join("")}"/>`;g+=pts.map(p=>`<circle class="dot ${p[1]<0?"neg":""} ${p[2]?"fut":""}" cx="${pl+gw*p[0]+gw/2}" cy="${y(p[1])}" r="4"/>`).join("")}
  L.forEach((m,i)=>{g+=`<rect class="hit" data-i="${i}" x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}"/>`});
  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Acumulado ao longo do ano">${g}</svg>`}
 let PN=null;
@@ -591,28 +599,34 @@ const pnW=id=>Math.max(300,Math.round($(id).clientWidth||720));
 function pnCharts(){if(!PN)return;$("pnc1").innerHTML=pnBars(PN.L,pnW("pnc1"));$("pnc2").innerHTML=pnLine(PN.L,pnW("pnc2"))}
 let pnRT=null;addEventListener("resize",()=>{clearTimeout(pnRT);pnRT=setTimeout(()=>{if(!$("panorama").hidden)pnCharts()},150)});
 function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa",cx=pnView==="caixa";$("pyl").textContent=y;
- document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));
+ document.querySelectorAll("#pnv button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pnView)));$("pnpos").hidden=true;$("pnf").classList.toggle("g4",cx&&y===+nowK.slice(0,4));
  const C=pnCaixa(y),L=Array.from({length:12},(_,i)=>{const m=pnMonth(ym(y,i));m.cx=C[m.k];return m}),feitos=L.filter(m=>m.tem),T=pnSum(feitos);
  /* cada mês visto pela pergunta escolhida: resultado (deu lucro?) ou caixa (tem dinheiro?) */
- const V=L.map(m=>cx?{k:m.k,m,ent:m.cx.ent,sai:m.cx.sai,val:m.cx.ger,tem:m.cx.ent>0.004||m.cx.sai>0.004}:{k:m.k,m,ent:m.ent,sai:m.sai,val:m.R.res,tem:m.tem});PN={L:V,cx};
+ const nowY=+nowK.slice(0,4),temSaldo=k=>firstK&&k>=firstK&&(y<nowY||(y===nowY&&k<=ym(y,11))||k<=nowK);
+ const V=L.map(m=>cx?{k:m.k,m,ent:m.cx.ent,sai:m.cx.sai,val:m.cx.ger,tem:m.cx.ent>0.004||m.cx.sai>0.004,abs:temSaldo(m.k)?saldoFim(m.k):null}:{k:m.k,m,ent:m.ent,sai:m.sai,val:m.R.res,tem:m.tem});PN={L:V,cx};
  const VF=V.filter(v=>v.tem),VP=VF.filter(v=>v.k<=nowK),sum=f=>VF.reduce((a,v)=>a+f(v),0);
  $("pnh").textContent=`Panorama de ${y}`;
- $("pnvh").innerHTML=cx?"<b>Tem dinheiro?</b> Mostra quando o dinheiro entra e sai das contas de verdade. Uma compra no cartão feita em novembro aparece no mês em que a fatura vence. As vendas entram já sem as taxas.":"<b>Deu lucro?</b> Cada venda e cada gasto contam no mês em que aconteceram, igual ao Painel. Uma compra no cartão feita em novembro conta em novembro, mesmo que a fatura vença em dezembro.";
+ $("pnvh").innerHTML=cx?"<b>Tem dinheiro?</b> Mostra quanto dinheiro há nas contas e quando ele entra e sai de verdade. Uma compra no cartão feita em novembro sai do caixa quando a fatura é paga. As vendas entram já sem as taxas.":"<b>Deu lucro?</b> Cada venda e cada gasto contam no mês em que aconteceram, igual ao Painel. Uma compra no cartão feita em novembro conta em novembro, mesmo que a fatura vença em dezembro.";
  const fig=(l,v,e,c="")=>`<div class="fig"><small>${l}</small><b class="${c}">${v}</b><em>${e}</em></div>`;
  if(!cx){$("pns").innerHTML=feitos.length?`${esc(nome)} ${T.res>=0?"sobrou":"ficou no vermelho em"} <b class="${T.res>=0?"okc":"out"}">${M(Math.abs(T.res))}</b> em ${y}, com ${feitos.length} ${feitos.length>1?"meses lançados":"mês lançado"}.`:`Nenhum lançamento em ${y}${fc?" para esta empresa":""}.`;
   $("pnf").innerHTML=fig("Faturamento no ano",M(T.fat),feitos.length?`média de ${M(T.fat/feitos.length)} por mês`:"–","in")+fig("Anúncios e tráfego",M(T.trafT),T.fat?`${pc(T.trafT/T.fat)} do faturamento`:"custo real, com impostos")+fig("Estrutura e pró-labore",M(T.estrT+T.socios),`estrutura ${M(T.estrT)} · pró-labore ${M(T.socios)}`)+fig("Impostos e taxas",M(T.hidden),T.fat?`${pc(T.hidden/T.fat)} do faturamento`:"tudo somado","amb")+fig("Sobra no ano",M(T.res),T.fat?`${pc(T.res/T.fat)} do faturamento`:"depois de tudo",T.res>=0?"okc":"out")}
+ else if(y===nowY){const H=caixaHoje(),fm=fimMes(nowK),fa=`${y}-12-31`,A=vencList(fa),aM=A.filter(v=>v.data<=fm).reduce((a,v)=>a+v.valor,0),aA=A.reduce((a,v)=>a+v.valor,0),fica=r2(H.tot-aA);let run=H.tot,falta=null;for(const v of A){run-=v.valor;if(run<-0.004&&!falta)falta=v.data}
+  $("pns").innerHTML=`Hoje a empresa tem <b class="in">${M(H.tot)}</b> nas contas e plataformas. Até 31/12 ainda vencem <b class="outc">${M(aA)}</b> em faturas, DAS e contas. ${fica>=0?`Mesmo sem nenhuma venda nova, sobram <b class="okc">${M(fica)}</b>.`:`Sem vendas novas, faltariam <b class="out">${M(-fica)}</b> a partir de ${dShort(falta)}.`}`;
+  $("pnf").innerHTML=fig("Dinheiro hoje",M(H.tot),`banco ${M(H.banco)} · plataformas ${M(H.plat)}`,"in")+fig(`A pagar até ${dShort(fm)}`,M(aM),"faturas, DAS e contas do mês","outc")+fig("A pagar até 31/12",M(aA),`${A.length} ${A.length===1?"pagamento":"pagamentos"} até o fim do ano`,"outc")+fig("Fica no caixa em 31/12",M(fica),"se não entrar mais nenhuma venda",fica>=0?"okc":"out");
+  pnPos(H,A,fa)}
  else{const P=VP.reduce((a,v)=>({ent:a.ent+v.ent,sai:a.sai+v.sai,ger:a.ger+v.val,cartao:a.cartao+v.m.cx.cartao,conta:a.conta+v.m.cx.conta+v.m.cx.saque}),{ent:0,sai:0,ger:0,cartao:0,conta:0});
   const fut=VF.filter(v=>v.k>nowK).reduce((a,v)=>a+v.sai,0);
   $("pns").innerHTML=VP.length?`Até agora, em ${y}, entrou <b class="in">${M(P.ent)}</b> e saiu <b class="outc">${M(P.sai)}</b> das contas. O caixa ${P.ger>=0?"cresceu":"diminuiu"} <b class="${P.ger>=0?"okc":"out"}">${M(Math.abs(P.ger))}</b>.${fut>0.004?` Ainda vão sair ${M(fut)} em faturas e contas dos próximos meses.`:""}`:`Nenhuma entrada ou saída em ${y}${fc?" para esta empresa":""}.`;
   $("pnf").innerHTML=fig("Entrou nas contas",M(P.ent),"vendas já sem as taxas e outras entradas","in")+fig("Faturas dos cartões",M(P.cartao),"pelo mês do vencimento","outc")+fig("Pagamentos da conta",M(P.conta),"pró-labore, contador, DAS etc.","outc")+fig("Caixa gerado no ano",M(P.ger),P.ent?`${pc(P.ger/P.ent)} do que entrou`:"entradas − saídas",P.ger>=0?"okc":"out")+fig("Média por mês",VP.length?M(P.ger/VP.length):"–",`${VP.length} ${VP.length>1?"meses":"mês"} até agora`,P.ger>=0?"okc":"out")}
  $("pnc1t").textContent=cx?"Entrou e saiu das contas, mês a mês":"Entrou e saiu, mês a mês";
- $("pnc1h").textContent=cx?"Entradas são as vendas (já sem taxas) e outras entradas. Saídas são as faturas dos cartões no mês do vencimento e o que saiu direto da conta. Toque numa coluna para ver os valores.":"Entradas são as vendas e outras entradas. Saídas são tudo o que a empresa gastou: taxas, DAS, anúncios, estrutura e pró-labore. Toque numa coluna para ver os valores.";
- $("pnc2t").textContent=cx?"Caixa acumulado no ano":"Sobra acumulada no ano";
- $("pnc2h").textContent=cx?"Quanto o dinheiro nas contas cresceu (ou diminuiu) desde janeiro, somando a geração de caixa de cada mês.":"Quanto a empresa já guardou no ano, somando a sobra de cada mês.";
- $("pnmh").textContent=cx?"Quanto sobrou de dinheiro nas contas em cada mês. Meses futuros mostram as faturas que ainda vão vencer. Toque num mês para abrir o Painel dele.":"Quanto sobrou de lucro em cada mês. Toque num mês para abrir o resultado completo dele no Painel.";
+ $("pnc1h").textContent=cx?"Entradas são as vendas (já sem taxas) e outras entradas. Saídas são as faturas dos cartões (no dia em que foram pagas, ou no vencimento se ainda vão vencer) e o que saiu direto da conta. Toque numa coluna para ver os valores.":"Entradas são as vendas e outras entradas. Saídas são tudo o que a empresa gastou: taxas, DAS, anúncios, estrutura e pró-labore. Toque numa coluna para ver os valores.";
+ $("pnc2t").textContent=cx?"Dinheiro nas contas no fim de cada mês":"Sobra acumulada no ano";
+ $("pnc2h").textContent=cx?"Somando bancos e plataformas. Pontos cheios são o saldo real; pontos vazios são a previsão, já descontando as faturas e contas que vão vencer.":"Quanto a empresa já guardou no ano, somando a sobra de cada mês.";
+ $("pnmh").textContent=cx?"O número grande é quanto ficou (ou vai ficar) nas contas no fim do mês. Embaixo, se o mês entrou mais ou saiu mais. Toque num mês para abrir o Painel dele.":"Quanto sobrou de lucro em cada mês. Toque num mês para abrir o resultado completo dele no Painel.";
  pnCharts();
  const best=VP.length>1?VP.reduce((a,b)=>b.val>a.val?b:a):null;
  $("pnm").innerHTML=V.map(v=>{const fut=v.k>nowK,m=v.m;const tag=v.k===nowK?`<span class="badge info">agora</span>`:!v.tem?"":fut?`<span class="badge mute">${cx?"a vencer":"previsto"}</span>`:v.val>=0?(best===v?`<span class="badge ok">melhor mês</span>`:`<span class="badge ok">${cx?"entrou mais":"sobrou"}</span>`):`<span class="badge over">${cx?"saiu mais":"faltou"}</span>`;
+  if(cx&&v.abs!=null){const t2=v.k===nowK?`<span class="badge info">agora</span>`:fut?`<span class="badge mute">previsto</span>`:"";return `<button type="button" class="mc" data-k="${v.k}"><small>${cap(kName(v.k,{month:"long"}))}${t2}</small><b class="${v.abs>=0?"okc":"out"}">${M(v.abs)}</b><em>${fut||v.k===nowK?"fica nas contas no fim do mês":"ficou nas contas no fim do mês"}<br>no mês: <span class="${v.val>=0?"in":"outc"}">${v.val>=0?"+":"−"} ${M(Math.abs(v.val))}</span></em></button>`}
   const det=!v.tem?"sem lançamentos":cx?`<span class="in">entrou ${M(v.ent)}</span><br><span class="outc">saiu ${M(v.sai)}</span>${m.cx.cartao>0.004?` · faturas ${Mk(m.cx.cartao)}`:""}`:`<span class="in">entrou ${M(v.ent)}</span><br><span class="outc">saiu ${M(v.sai)}</span>${m.R.adsTot?` · anúncio ${Mk(m.R.trafT)}`:""}`;
   return `<button type="button" class="mc ${v.tem?"":"vazio"}" data-k="${v.k}"><small>${cap(kName(v.k,{month:"long"}))}${tag}</small><b class="${!v.tem?"":v.val>=0?"okc":"out"}">${v.tem?M(v.val):"–"}</b><em>${det}</em></button>`}).join("");
  pnTable(L,T,feitos);
@@ -628,11 +642,26 @@ function renderPanorama(){const y=cur.y,nome=fc?cnpjOf(fc).nome:"A empresa",cx=p
   $("pngf").innerHTML=fig("Entrou nas contas",M(TX.ent),XS.length?`média de ${M(TX.ent/XS.length)} por mês`:"–","in")+fig("Saiu das contas",M(TX.sai),`faturas ${M(TX.cartao)} · conta ${M(TX.conta)}`,"outc")+fig("Caixa gerado",M(TX.ger),XS.length?`média de ${M(TX.ger/XS.length)} por mês`:"–",TX.ger>=0?"okc":"out")+fig("Melhor mês de caixa",gb?M(gb.ger):"–",gb?`${kName(gb.k,{month:"long",year:"numeric"})}. Pior: ${kName(gw.k,{month:"short",year:"numeric"})}, ${M(gw.ger)}`:"–",gb&&gb.ger<0?"out":"okc");
   $("pngt").innerHTML=XS.length?`<tr><th>Ano</th><th class="n">Meses</th><th class="n">Entrou</th><th class="n">Faturas dos cartões</th><th class="n">Pagamentos da conta</th><th class="n">Caixa gerado</th></tr>`+anos.map(a=>{const xs=XS.filter(x=>x.k.startsWith(a)),s=S(xs);return `<tr class="rowc" data-y="${a}"><td>${a}</td><td class="n">${xs.length}</td><td class="n in">${M(s.ent)}</td><td class="n outc">${M(s.cartao)}</td><td class="n outc">${M(s.conta)}</td><td class="n"><span class="badge ${s.ger>=0?"ok":"over"}">${M(s.ger)}</span></td></tr>`}).join("")+`<tr class="tot"><td><b>Total geral</b></td><td class="n"><b>${XS.length}</b></td><td class="n in"><b>${M(TX.ent)}</b></td><td class="n outc"><b>${M(TX.cartao)}</b></td><td class="n outc"><b>${M(TX.conta)}</b></td><td class="n"><span class="badge ${TX.ger>=0?"ok":"over"}">${M(TX.ger)}</span></td></tr>`:""}}
 /* fluxo de caixa: quando o dinheiro entra e sai de verdade. Vendas pela data da venda (líquidas, na plataforma); compras no cartão pelo vencimento da fatura; o resto pela data. Saques entre contas da empresa não contam. */
-function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:0,cartao:0,conta:0,saque:0};
- for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}
-  else if(t.k==="ads"||t.k==="desp"){const c=pagCard(t);if(c)k=txDue(c,t).slice(0,7);if(C[k])C[k][c?"cartao":"conta"]+=txVal(t)}}
+function pnCaixa(y){const C={};for(let i=0;i<12;i++)C[ym(y,i)]={vendas:0,outras:0,cartao:0,conta:0,saque:0,aj:0};
+ for(const t of all()){if(!pass(t))continue;let k=t.data.slice(0,7);if(t.k==="venda"){if(C[k])C[k].vendas+=vendaLiq(t)}else if(t.k==="rec"){if(C[k])C[k].outras+=+t.valor||0}else if(t.k==="transf"){if(C[k])C[k].saque+=+t.taxa||0}else if(t.k==="ajuste"){if(C[k])C[k].aj+=+t.valor||0}
+  else if((t.k==="ads"||t.k==="desp")&&!pagCard(t)){if(t.pago===false&&t.data<todayS)k=nowK;if(C[k])C[k].conta+=txVal(t)}}
+ /* faturas: o que já foi pago sai na data do pagamento (às vezes antes do vencimento); o que falta pagar sai no vencimento */
+ const pf={};for(const t of all())if(t.k==="pagfat")(pf[t.card+"|"+t.due]=pf[t.card+"|"+t.due]||[]).push(t);
+ for(const f of faturas()){let rest=f.total;for(const p of (pf[f.card+"|"+f.due]||[]).sort((a,b)=>a.data.localeCompare(b.data))){const v=Math.min(rest,+p.valor||0);if(v<=0)break;rest-=v;const k=p.data.slice(0,7);if(C[k])C[k].cartao+=v}
+  if(rest>0.01&&!f.quit){const k=f.due<todayS?nowK:f.due.slice(0,7);if(C[k])C[k].cartao+=rest}}
+ /* DAS que ainda vai vencer (estimado ou já calculado) entra no mês do vencimento, como pagamento da conta */
+ if(y>=+nowK.slice(0,4))for(const v of vencList(`${y}-12-31`))if(!v.fat&&!v.tx){const k=v.data<todayS?nowK:v.data.slice(0,7);if(C[k])C[k].conta+=v.valor}
  for(const k in C){const x=C[k];x.ent=x.vendas+x.outras;x.sai=x.cartao+x.conta+x.saque;x.ger=x.ent-x.sai}return C}
 let pnView="dre";
+/* agenda de pagamentos: cada conta a pagar até o fim do ano e quanto fica no caixa depois dela */
+function pnPos(H,A,fa){$("pnpos").hidden=false;
+ $("pnposh").textContent="Começa com o dinheiro de hoje e desconta cada pagamento na data em que vence. À direita, quanto fica nas contas depois de cada um. Vendas novas ainda não entram aqui, então o número real tende a ser melhor.";
+ let run=H.tot,mes=null,o=`<div class="ag tot"><span>Hoje, nas contas e plataformas<small>banco ${M(H.banco)} · plataformas ${M(H.plat)} (a sacar)</small></span><b class="in">${M(H.tot)}</b></div>`;
+ const fecha=k=>`<div class="ag tot"><span>Fim de ${kName(k,{month:"long"})}</span><span class="badge ${run>=-0.004?"ok":"over"}">fica ${M(run)}</span></div>`;
+ for(const v of A){const k=v.data.slice(0,7)<nowK?nowK:v.data.slice(0,7);if(mes&&k!==mes)o+=fecha(mes);mes=k;run=r2(run-v.valor);
+  o+=`<div class="ag"><span>${esc(v.nome)}${vtag(v.data)}<small>${dShort(v.data)} · ${esc(v.det||"")}</small></span><span class="n"><b class="outc">− ${M(v.valor)}</b><small class="${run<0?"out":""}">fica ${M(run)}</small></span></div>`}
+ o+=mes?fecha(mes):`<p class="empty">Nada a pagar até ${dShort(fa)}.</p>`;
+ $("pnpost").innerHTML=o}
 function pnTable(L,T,feitos){const y=cur.y;
  const head=`<tr><th></th>${L.map(m=>`<th class="n${m.k>nowK?" fut":""}" data-k="${m.k}">${mAbbr(m.k)}</th>`).join("")}<th class="n tc">Total</th>${pnView==="dre"?`<th class="n">% fat.</th>`:""}</tr>`;
  const v=(x,neg)=>Math.abs(x)<0.005?"–":(neg?"− ":"")+M(x);
@@ -662,16 +691,18 @@ function pnTable(L,T,feitos){const y=cur.y;
    +ind("Margem de contribuição %",R=>R.fat?pc(R.margem/R.fat):"–",T.fat?pc(S.margem/T.fat):"–")
    +ind("Margem líquida %",R=>R.fat?pc(R.res/R.fat):"–",T.fat?pc(T.res/T.fat):"–")
    +ind("Impostos e taxas % do faturamento",R=>R.fat?pc(R.hidden/R.fat):"–",T.fat?pc(T.hidden/T.fat):"–")}
- else{const K=L.map(m=>m.cx),tem=x=>x.ent>0.004||x.sai>0.004;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").textContent="O dinheiro que entrou e saiu das contas em cada mês. Azul é o que entrou, rosa é o que saiu. A etiqueta verde ou vermelha mostra se o mês terminou com mais ou menos dinheiro. Saques entre contas da empresa não contam, porque o dinheiro continua na empresa.";
-  let acc=0;const accs=K.map(x=>acc+=x.ger);const sum=f=>K.reduce((a,x)=>a+f(x),0);
+ else{const K=L.map(m=>m.cx),tem=x=>x.ent>0.004||x.sai>0.004;$("pnth").textContent=`Fluxo de caixa de ${y}`;$("pnthint").textContent="O dinheiro que entrou e saiu das contas em cada mês, com o que havia nas contas no início e no fim. Azul é o que entrou, rosa é o que saiu. Início + entrou − saiu (+ ajustes de saldo) = fim. Saques entre contas da empresa não contam, porque o dinheiro continua na empresa.";
+  const AB=PN.L.map(v=>v.abs);const sum=f=>K.reduce((a,x)=>a+f(x),0);
   const line=(l,f,tipo,cls="sub")=>{const t=sum(f);const cell=x=>tipo==="res"?pill(x):Math.abs(x)<0.005?"–":tipo==="in"?`<span class="in">${M(x)}</span>`:`<span class="outc">− ${M(x)}</span>`;return `<tr class="${cls}${tipo==="res"?" resrow":""}"><td>${l}</td>${K.map(x=>`<td class="n">${tem(x)?cell(f(x)):""}</td>`).join("")}<td class="n tc">${cell(t)}</td></tr>`};
   const sec=(l,c)=>`<tr class="sec"><td><i class="sw ${c}"></i> ${l}</td>${K.map(()=>"<td></td>").join("")}<td class="tc"></td></tr>`;
   $("pnt").innerHTML=head
+   +`<tr class="ind"><td>Dinheiro nas contas no início do mês</td>${AB.map((a,i)=>{const p=i?AB[i-1]:(L[0].k>firstK?saldoFim(addM(L[0].k,-1)):null);return `<td class="n">${a==null||p==null?"":M(p)}</td>`}).join("")}<td class="n tc"></td></tr>`
    +sec("Entrou","cin")+line("Vendas recebidas (já sem taxas)",x=>x.vendas,"in")+line("Outras entradas",x=>x.outras,"in")+line("Total que entrou",x=>x.ent,"in","tot")
-   +sec("Saiu","cout")+line("Faturas dos cartões (no vencimento)",x=>x.cartao,"out")+line("Pagamentos direto da conta",x=>x.conta,"out")+line("Taxas de saque",x=>x.saque,"out")+line("Total que saiu",x=>x.sai,"out","tot")
+   +sec("Saiu","cout")+line("Faturas dos cartões",x=>x.cartao,"out")+line("Pagamentos direto da conta",x=>x.conta,"out")+line("Taxas de saque",x=>x.saque,"out")+line("Total que saiu",x=>x.sai,"out","tot")
    +`<tr class="sec"><td>Resultado do caixa</td>${K.map(()=>"<td></td>").join("")}<td class="tc"></td></tr>`
    +line("Sobrou no mês (entrou − saiu)",x=>x.ger,"res","tot")
-   +`<tr class="ind"><td>Acumulado no ano</td>${K.map((x,i)=>`<td class="n ${accs[i]<0?"out":""}">${tem(x)||L[i].k<=nowK?M(accs[i]):""}</td>`).join("")}<td class="n tc"></td></tr>`}}
+   +(K.some(x=>Math.abs(x.aj)>0.004)?`<tr class="sub"><td>Ajustes de saldo<br><small class="hint">acertos para bater com o banco</small></td>${K.map(x=>`<td class="n">${Math.abs(x.aj)<0.005?"":x.aj>0?`<span class="in">${M(x.aj)}</span>`:`<span class="outc">− ${M(-x.aj)}</span>`}</td>`).join("")}<td class="n tc"></td></tr>`:"")
+   +`<tr class="tot resrow"><td>Dinheiro nas contas no fim do mês</td>${AB.map((a,i)=>`<td class="n">${a==null?"":`<span class="badge ${a>=0?"ok":"over"}">${M(a)}</span>`}${a!=null&&L[i].k>=nowK?`<br><small class="hint">previsto</small>`:""}</td>`).join("")}<td class="n tc"></td></tr>`}}
 $("pnv").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;pnView=b.dataset.v;renderPanorama()});
 const pnGo=k=>{cur={y:+k.slice(0,4),m:+k.slice(5,7)-1};location.hash="#painel";render();scrollTo({top:0,behavior:"smooth"})};
 $("pyp").onclick=()=>{cur={y:cur.y-1,m:cur.m};render()};$("pyn").onclick=()=>{cur={y:cur.y+1,m:cur.m};render()};
@@ -679,7 +710,7 @@ $("pnm").addEventListener("click",e=>{const r=e.target.closest("[data-k]");if(r)
 $("pngt").addEventListener("click",e=>{const r=e.target.closest("[data-y]");if(!r)return;cur={y:+r.dataset.y,m:cur.m};render();scrollTo({top:0,behavior:"smooth"})});
 /* dica ao passar o dedo ou o mouse nos gráficos */
 for(const id of ["pnc1","pnc2"]){const box=$(id);const show=e=>{const h=e.target.closest(".hit");if(!h||!PN)return;pnTipOff(box);h.classList.add("on");const i=+h.dataset.i,m=PN.L[i];let a=0;for(let j=0;j<=i;j++)a+=PN.L[j].val;const nm=PN.cx?"Caixa do mês":"Sobra do mês";const br=box.getBoundingClientRect(),hr=h.getBoundingClientRect();
- const html=id==="pnc1"?`<b>${cap(kName(m.k))}</b><div><span><i style="background:var(--cin)"></i>Entradas</span>${M(m.ent)}</div><div><span><i style="background:var(--cout)"></i>Saídas</span>${M(m.sai)}</div><div><span>${PN.cx?"Sobrou no caixa":"Sobra"}</span>${M(m.val)}</div>`:`<b>${cap(kName(m.k))}</b><div><span>${nm}</span>${M(m.val)}</div><div><span>Acumulado</span>${M(a)}</div>`;
+ const html=id==="pnc1"?`<b>${cap(kName(m.k))}</b><div><span><i style="background:var(--cin)"></i>Entradas</span>${M(m.ent)}</div><div><span><i style="background:var(--cout)"></i>Saídas</span>${M(m.sai)}</div><div><span>${PN.cx?"Sobrou no caixa":"Sobra"}</span>${M(m.val)}</div>`:PN.cx&&m.abs!=null?`<b>${cap(kName(m.k))}</b><div><span>${m.k>=nowK?"Fica nas contas":"Ficou nas contas"}</span>${M(m.abs)}</div><div><span>No mês</span>${M(m.val)}</div>`:`<b>${cap(kName(m.k))}</b><div><span>${nm}</span>${M(m.val)}</div><div><span>Acumulado</span>${M(a)}</div>`;
  pnTip(box,hr.left-br.left+hr.width/2,hr.top-br.top+20,html)};box.addEventListener("pointerover",show);box.addEventListener("click",show);box.addEventListener("pointerleave",()=>pnTipOff(box))}
 
 /* ---------- lançamentos ---------- */
