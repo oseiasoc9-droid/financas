@@ -314,7 +314,7 @@ return api})();
 </section>
 
 <section id="lancamentos" hidden>
-  <h1>Lançamentos</h1><p class="sub">Tudo o que entrou e saiu no mês. Toque numa linha para editar.</p>
+  <h1>Lançamentos</h1><p class="sub">Tudo o que entrou e saiu no mês, pela data da cobrança: compras no cartão aparecem no mês em que a fatura vence. Toque numa linha para editar.</p>
   <div class="filt"><div class="seg" id="ltipo"></div><button class="btn sm" id="fixbtn" hidden></button><button class="btn sm" id="impbtn">Importar vendas (CSV)</button></div>
   <div class="panel" style="margin-top:14px"><p class="tsum" id="tsum"></p><div class="tscroll"><table id="ltab"></table></div></div>
 </section>
@@ -685,8 +685,11 @@ for(const id of ["pnc1","pnc2"]){const box=$(id);const show=e=>{const h=e.target
 const TIPOS=[["venda","Venda"],["ads","Anúncio"],["desp","Despesa"],["transf","Saque / transferência"],["rec","Outra entrada"]];
 const TNAME={venda:"Venda",ads:"Anúncio",desp:"Despesa",transf:"Saque",rec:"Entrada",pagfat:"Pagou fatura",ajuste:"Ajuste de saldo"};
 function txDesc(t){if(t.k==="venda"){const p=prodOf(t.prod);return `${p?p.nome:"Produto"} · ${t.qtd||1}x · ${t.plat||""}`}if(t.k==="ads"){const a=adOf(t.conta),p=prodOf(t.prod);return `${a?a.nome:"Anúncio"}${p?" · "+p.nome:""}`}if(t.k==="transf")return `${t.de} → ${t.para}`;if(t.k==="pagfat")return `Fatura ${t.card} de ${dShort(t.due)}`;if(t.k==="ajuste")return `Ajuste ${t.conta}`;return t.desc||t.cat||""}
+/* Lançamentos pelo mês da cobrança: compra no cartão entra no mês em que a fatura vence; o resto fica na data. Os dados continuam com a data da compra (o Painel e o Resultado do Panorama seguem por competência). */
+const cobDia=t=>{const c=(t.k==="ads"||t.k==="desp")&&pagCard(t);return c?txDue(c,t):t.data};
+function inCobranca(k){const o=[];for(const t of all())if(cobDia(t).slice(0,7)===k)o.push(t);return o}
 function renderList(){const k=curK();$("ltipo").innerHTML=[["","Tudo"]].concat(TIPOS).map(([v,l])=>`<button data-t="${v}" aria-pressed="${ltipo===v}">${l}</button>`).join("");
- const L=inMonth(k).filter(pass).filter(t=>!ltipo||t.k===ltipo).sort((a,b)=>b.data.localeCompare(a.data));
+ const L=inCobranca(k).filter(pass).filter(t=>!ltipo||t.k===ltipo).sort((a,b)=>cobDia(b).localeCompare(cobDia(a))||b.data.localeCompare(a.data));
  const miss=fixasFaltando(k);const fb=$("fixbtn");fb.hidden=!miss.length;fb.textContent=`Lançar ${miss.length} ${miss.length>1?"despesas fixas":"despesa fixa"} do mês`;
  const ent=L.filter(t=>t.k==="venda"||t.k==="rec").reduce((a,t)=>a+txVal(t),0),sai=L.filter(t=>t.k==="ads"||t.k==="desp").reduce((a,t)=>a+txVal(t),0);
  $("tsum").textContent=L.length?`${L.length} lançamento${L.length>1?"s":""} · entradas ${M(ent)} · saídas ${M(sai)}`:"";
