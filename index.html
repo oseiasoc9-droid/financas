@@ -283,6 +283,210 @@ const api={sair:null,
 return api})();
 </script>
 <!-- TRAVA:FIM -->
+<!-- BANCO:INICIO (bloco igual em index.html e empresa.html: transações dos bancos pelo Open Finance numa caixa "Para confirmar") -->
+<style>
+#bk-btn{position:relative}
+#bk-btn .bk-n{position:absolute;top:-4px;right:-6px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--pink);color:#fff;font-size:11px;font-weight:700;line-height:17px;text-align:center}
+#banco{position:fixed;inset:0;z-index:900;background:rgba(3,14,28,.6);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+#banco[hidden]{display:none}
+#banco .bk-box{width:100%;max-width:720px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:18px 16px;margin:auto 0}
+#banco h2{font-weight:300;font-size:24px;margin:0}
+#banco .bk-top{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:6px}
+#banco .bk-m{color:var(--mute);font-size:14px;margin:6px 0 12px}
+#banco .bk-tabs{display:flex;gap:6px;margin:8px 0 12px;flex-wrap:wrap}
+#banco button{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer}
+#banco button.pri{background:var(--sky);border-color:var(--sky);color:#06213b;font-weight:600}
+#banco button[aria-pressed=true]{border-color:var(--sky);color:var(--sky)}
+#banco button:disabled{opacity:.5;cursor:default}
+#banco .bk-x{border:0;font-size:22px;padding:2px 8px;line-height:1}
+#banco .bk-it{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center}
+#banco .bk-it .bk-v{font-size:18px;font-weight:300;text-align:right;white-space:nowrap}
+#banco .bk-it small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+#banco .bk-f{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#banco input,#banco select,#banco textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 9px;min-width:0}
+#banco .bk-f input{flex:1 1 150px}
+#banco .bk-f select{flex:1 1 170px;max-width:100%}
+#banco textarea{width:100%;min-height:70px;box-sizing:border-box}
+#banco .bk-b{display:inline-flex;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;margin-left:6px;white-space:nowrap;vertical-align:2px}
+#banco .bk-b.out{background:rgba(255,92,138,.16);color:var(--pink)}
+#banco .bk-b.in{background:rgba(143,211,255,.14);color:var(--sky)}
+#banco .bk-b.pend{background:rgba(255,211,143,.15);color:var(--amber)}
+#banco .bk-b.ok{background:rgba(111,227,168,.14);color:var(--ok,#6fe3a8)}
+#banco .bk-sec{margin:16px 0 6px;font-size:15px;font-weight:600}
+#banco .bk-c{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between}
+#banco .bk-c>span{flex:1 1 220px}
+#banco .bk-c>span.bk-b{flex:0 0 auto}
+#banco .bk-c select{flex:0 1 200px}
+#banco .bk-e{color:var(--pink);font-size:14px}
+#banco label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
+@media (max-width:520px){#banco{padding:0}#banco .bk-box{border-radius:0;min-height:100%;border:0}}
+</style>
+<script>
+/* Banco: busca as transações no Meu Pluggy (função "banco" do Supabase) e mostra numa caixa "Para confirmar".
+   Nada entra no app sem a pessoa tocar em Lançar. A página informa os dados com Banco.iniciar({...}) depois do login.
+   Documento "banco" na tabela docs (compartilhado entre Pessoal e Empresa):
+   {inicio, itens:[Item IDs], contas:{idDaConta:{lado:"p"|"e"|"x", alvo:"conta:Nome"|"card:Nome", nome, tipo, banco, num}},
+    feito:{idDaTransação:{s:"l" lançado|"i" ignorado|"d" já estava no app, t:id do lançamento, d:data}}, apr:{p:{loja:cat}, e:{loja:cat}}} */
+window.Banco=(()=>{
+const KEY="banco",ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let tAt=0,P=null,doc=null,rev=0,dados=null,sug={},el=null,buscando=false,aba="fila",erro="",iaOk=true,pedindoIA=false;
+const clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl=v=>(+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const p2=n=>String(n).padStart(2,"0"),iso=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`,hoje=()=>iso(new Date());
+const somaD=(s,n)=>{const d=new Date(s+"T12:00");d.setDate(d.getDate()+n);return iso(d)};
+const dif=(a,b)=>Math.abs(Date.parse(a+"T12:00")-Date.parse(b+"T12:00"))/864e5;
+const br=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}`:"";
+const nrm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+const loja=t=>nrm(t.loja||t.desc).split(" ").filter(w=>w.length>2&&!/\d/.test(w)).slice(0,3).join(" ");
+const ehFatura=t=>/pagamento.{0,12}fatura|pgto.{0,6}fat|fatura.{0,10}cart|pag fat/i.test(t.desc+" "+t.raw);
+const vazio=()=>({kind:"banco",inicio:hoje().slice(0,8)+"01",itens:[],contas:{},feito:{},apr:{p:{},e:{}}});
+const demo=()=>!P.sb();
+const ck=()=>"financas-banco-"+(demo()?"demo":(P.user()||{}).id);
+
+/* ---------- documento compartilhado (sempre lê o rev e grava com .eq("rev")) ---------- */
+async function ler(){
+  if(demo()){const d=JSON.parse(ls.get("demo-banco")||"null");doc={...vazio(),...(d?d.body:{})};rev=d?d.rev:0;return}
+  const q=await P.sb().from("docs").select("body,rev").eq("user_id",P.user().id).eq("key",KEY).maybeSingle();if(q.error)throw q.error;
+  doc={...vazio(),...((q.data&&q.data.body)||{})};doc.apr={p:{},e:{},...(doc.apr||{})};rev=q.data?+q.data.rev||0:0}
+async function muda(fn){
+  for(let i=0;i<8;i++){await ler();const body=clone(doc);fn(body);const now=new Date().toISOString();let ok=false;
+    if(demo()){ls.set("demo-banco",JSON.stringify({body,rev:rev+1}));ok=true}
+    else if(rev>0){const u=await P.sb().from("docs").update({body,rev:rev+1,updated_at:now}).eq("user_id",P.user().id).eq("key",KEY).eq("rev",rev).select("key");if(u.error)throw u.error;ok=!!(u.data&&u.data.length)}
+    else{const n=await P.sb().from("docs").insert({user_id:P.user().id,key:KEY,body,rev:1,updated_at:now});if(n.error){if(n.error.code!=="23505")throw n.error}else ok=true}
+    if(ok){doc=body;rev=rev+1;return}await new Promise(r=>setTimeout(r,150+Math.random()*300))}
+  throw new Error("Não consegui salvar. Tente de novo.")}
+
+/* ---------- busca no banco (pela função do Supabase) ---------- */
+function exemplo(){/* modo demonstração: dados de mentira para ver a tela */const h=hoje(),d=n=>somaD(h,-n);
+  return {conexoes:[{id:"demo-1",banco:"Banco de exemplo",status:"UPDATED",atualizado:new Date().toISOString()}],
+    contas:[{id:"c1",item:"demo-1",tipo:"BANK",nome:"Conta corrente",num:"1234",banco:"Banco de exemplo",doc:"",saldo:1520.4},{id:"c2",item:"demo-1",tipo:"CREDIT",nome:"Cartão de crédito",num:"9876",banco:"Banco de exemplo",doc:"",saldo:-830.1},{id:"c3",item:"demo-1",tipo:"BANK",nome:"Conta PJ",num:"5555",banco:"Banco de exemplo",doc:"12345678000199",saldo:4210}],
+    txs:[{id:"x1",acc:"c2",data:d(1),desc:"POSTO IPIRANGA VCA",raw:"",valor:180,tipo:"DEBIT",cat:"Gas stations",st:"POSTED",loja:"Posto Ipiranga"},
+      {id:"x2",acc:"c2",data:d(2),desc:"PADARIA LISBOA",raw:"",valor:23.5,tipo:"DEBIT",cat:"Food and drinks",st:"POSTED",loja:""},
+      {id:"x3",acc:"c1",data:d(2),desc:"PIX ENVIADO - JOSE DA SILVA",raw:"",valor:-60,tipo:"DEBIT",cat:"Transfer - PIX",st:"POSTED",loja:""},
+      {id:"x4",acc:"c1",data:d(3),desc:"PIX RECEBIDO - INFOPRO DIGITAL",raw:"",valor:1621,tipo:"CREDIT",cat:"Transfer - PIX",st:"POSTED",loja:""},
+      {id:"x5",acc:"c1",data:d(4),desc:"PAGAMENTO DE FATURA",raw:"",valor:-830.1,tipo:"DEBIT",cat:"Credit card payment",st:"POSTED",loja:""},
+      {id:"x6",acc:"c3",data:d(1),desc:"FACEBK *ADS 7ZK2",raw:"",valor:-113.83,tipo:"DEBIT",cat:"Advertising",st:"POSTED",loja:"Facebook"},
+      {id:"x7",acc:"c3",data:d(3),desc:"GREENN PAGAMENTOS SAQUE",raw:"",valor:2500,tipo:"CREDIT",cat:"Transfer",st:"POSTED",loja:""},
+      {id:"x8",acc:"c3",data:d(5),desc:"CANVA* 02931",raw:"",valor:-34.9,tipo:"DEBIT",cat:"Software",st:"POSTED",loja:"Canva"}],erros:[]}}
+async function buscar(forcar){
+  if(buscando||!P)return;if(!doc)await ler();
+  if(!forcar&&dados&&Date.now()-dados.ts<3*3600e3)return;
+  if(!demo()&&!doc.itens.length){erro="";return}
+  buscando=true;erro="";desenha();
+  try{let r;
+    if(demo())r=exemplo();
+    else{const desde=doc.inicio<somaD(hoje(),-90)?somaD(hoje(),-90):doc.inicio;
+      const x=await Promise.race([P.sb().functions.invoke("banco",{body:{acao:"buscar",itens:doc.itens,desde}}),new Promise(ok=>setTimeout(()=>ok({error:{tempo:1}}),60000))]);
+      if(x.error){const st=x.error.context&&x.error.context.status;let msg="";try{msg=(await x.error.context.json()).erro||""}catch(e){}
+        throw new Error(x.error.tempo?"O banco demorou para responder. Tente de novo daqui a pouco.":st===404?"A função “banco” ainda não foi publicada no Supabase.":st===503?"Faltam as chaves do Pluggy nos segredos do Supabase.":st===403?"Esta conta não está liberada no segredo BANCO_USUARIOS do Supabase.":msg||"Não consegui falar com o Pluggy.")}
+      r=x.data}
+    dados={...r,ts:Date.now()};ls.set(ck(),JSON.stringify(dados));
+    const novas=(r.contas||[]).filter(c=>!doc.contas[c.id]);
+    if(novas.length)await muda(b=>{for(const c of novas)if(!b.contas[c.id])b.contas[c.id]={lado:String(c.doc||"").replace(/\D/g,"").length===14?"e":"p",alvo:"",nome:c.nome,tipo:c.tipo,banco:c.banco,num:c.num}});
+  }catch(e){erro=e.message||String(e)}finally{buscando=false}
+  await confere();desenha();pedeIA()}
+
+/* ---------- caixa "Para confirmar" ---------- */
+const doLado=()=>Object.entries(doc?doc.contas:{}).filter(([,c])=>c.lado===P.lado);
+function fila(){
+  const out=[],dup=[];if(!dados||!doc)return {out,dup};
+  const ex=P.existentes(),usados=new Set(Object.values(doc.feito).map(f=>f.t).filter(Boolean));
+  for(const t of dados.txs||[]){const c=doc.contas[t.acc];if(!c||c.lado!==P.lado||!c.alvo||doc.feito[t.id])continue;
+    if(t.st==="PENDING")continue;/* espera o banco confirmar: a transação pendente pode mudar de código */
+    const data=t.compra||t.data;if(!data||data<doc.inicio)continue;
+    const cred=c.tipo==="CREDIT",saida=cred?+t.valor>0:+t.valor<0,valor=Math.round(Math.abs(+t.valor||0)*100)/100;if(valor<0.01)continue;
+    if(cred&&!saida)continue;/* no cartão, valor negativo é pagamento da fatura ou estorno */
+    const m=ex.find(x=>!usados.has(x.id)&&x.alvo===c.alvo&&!!x.saida===saida&&Math.abs(x.valor-valor)<0.011&&dif(x.data,data)<=3);
+    if(m){usados.add(m.id);dup.push([t.id,m.id]);continue}
+    out.push({t,c,saida,valor,data,alvo:c.alvo,fat:saida&&!cred&&ehFatura(t)})}
+  out.sort((a,b)=>b.data.localeCompare(a.data));return {out,dup}}
+async function confere(){/* o que já estava lançado no app fica ligado ao banco, sem perguntar */
+  const {dup}=fila();if(!dup.length)return;try{await muda(b=>{for(const [t,m] of dup)if(!b.feito[t])b.feito[t]={s:"d",t:m,d:hoje()}})}catch(e){}}
+function sugestao(x){const s=sug[x.t.id]||{},ap=(doc.apr[P.lado]||{})[loja(x.t)];const op=P.cats(x.saida).map(o=>o[0]);
+  const cat=ap&&op.includes(ap)?ap:(s.cat&&op.includes(s.cat)?s.cat:"");return {desc:s.desc||limpa(x.t.loja||x.t.desc),cat}}
+const limpa=s=>String(s||"").replace(/\*/g," ").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase()).slice(0,40);
+async function pedeIA(){
+  if(!iaOk||pedindoIA||demo())return;const L=fila().out.filter(x=>!sug[x.t.id]&&!(doc.apr[P.lado]||{})[loja(x.t)]).slice(0,60);if(!L.length)return;
+  pedindoIA=true;try{const cd=P.cats(true).map(o=>o[1]),cr=P.cats(false).map(o=>o[1]);
+    const r=await P.sb().functions.invoke("banco",{body:{acao:"categorizar",lado:P.lado,catsD:cd,catsR:cr,recentes:P.recentes(),itens:L.map(x=>({saida:x.saida,valor:x.valor,desc:x.t.desc,loja:x.t.loja,catBanco:x.t.cat}))}});
+    if(r.error||!r.data||!Array.isArray(r.data.itens)){if(r.error)iaOk=false;return}
+    const lab=o=>Object.fromEntries(P.cats(o).map(([v,l])=>[l,v]));const LD=lab(true),LR=lab(false);
+    for(const it of r.data.itens){const x=L[it.i];if(!x)continue;const m=x.saida?LD:LR;sug[x.t.id]={desc:String(it.desc||"").slice(0,60),cat:m[it.cat]||""}}
+    ls.set(ck()+"-sug",JSON.stringify(sug));desenha()}catch(e){}finally{pedindoIA=false}}
+async function lancar(ids){
+  const F=fila().out,L=[];for(const id of ids){const x=F.find(y=>y.t.id===id);if(!x)continue;
+    const row=el.querySelector(`[data-it="${CSS.escape(id)}"]`);const desc=(row?row.querySelector("[data-desc]").value:sugestao(x).desc).trim(),cat=row?row.querySelector("[data-cat]").value:sugestao(x).cat;
+    if(!cat){aviso("Escolha a categoria antes de lançar.");if(row)row.querySelector("[data-cat]").focus();return}
+    L.push({...x,desc:desc||limpa(x.t.desc),cat,obs:`Banco: ${limpa(x.t.desc)}`})}
+  if(!L.length)return;
+  try{const novos=await P.lancar(L);
+    await muda(b=>{L.forEach((x,i)=>{b.feito[x.t.id]={s:"l",t:novos[i]||"",d:hoje()};const k=loja(x.t);if(k){b.apr[P.lado]=b.apr[P.lado]||{};b.apr[P.lado][k]=x.cat}})});
+    aviso(L.length>1?`${L.length} lançamentos feitos`:"Lançado")}catch(e){aviso("Não consegui lançar: "+(e.message||e))}
+  desenha()}
+async function ignorar(ids){try{await muda(b=>{for(const id of ids)b.feito[id]={s:"i",d:hoje()}})}catch(e){aviso(e.message)}desenha()}
+function aviso(s){try{toast(s,false)}catch(e){}}
+
+/* ---------- tela ---------- */
+function ui(){if(el)return el;el=document.createElement("div");el.id="banco";el.hidden=true;el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Bancos");document.body.appendChild(el);
+  el.addEventListener("click",e=>{if(e.target===el)return fecha();const b=e.target.closest("button");if(!b)return;const a=b.dataset;
+    if(a.x!==undefined)fecha();else if(a.aba){aba=a.aba;desenha()}else if(a.ok)lancar([a.ok]);else if(a.ign)ignorar([a.ign]);
+    else if(a.todos!==undefined){const ids=fila().out.filter(x=>!x.fat&&(el.querySelector(`[data-it="${CSS.escape(x.t.id)}"] [data-cat]`)||{}).value).map(x=>x.t.id);if(ids.length)lancar(ids);else aviso("Nenhum lançamento com categoria escolhida.")}
+    else if(a.buscar!==undefined)buscar(true);else if(a.salvar!==undefined)salvaConfig();else if(a.desf){desfaz(a.desf)}});
+  el.addEventListener("change",async e=>{const s=e.target;if(s.dataset.lado||s.dataset.alvo){const id=s.dataset.lado||s.dataset.alvo;
+    try{await muda(b=>{const c=b.contas[id];if(!c)return;if(s.dataset.lado){if(c.lado!==s.value){c.lado=s.value;c.alvo=""}}else c.alvo=s.value});await confere()}catch(err){aviso(err.message)}desenha();pedeIA()}});
+  addEventListener("keydown",e=>{if(e.key==="Escape"&&el&&!el.hidden)fecha()});return el}
+function fecha(){if(el)el.hidden=true;conta()}
+async function desfaz(id){try{await muda(b=>{delete b.feito[id]})}catch(e){aviso(e.message)}desenha()}
+async function salvaConfig(){const t=el.querySelector("#bk-itens").value,ini=el.querySelector("#bk-ini").value;
+  const itens=[...new Set(t.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>/^[0-9a-f-]{20,40}$/i.test(s)))];
+  try{await muda(b=>{b.itens=itens;if(/^\d{4}-\d{2}-\d{2}$/.test(ini))b.inicio=ini});aviso("Conexões salvas");await buscar(true)}catch(e){aviso(e.message)}}
+function opts(L,v,vazio){return (vazio?`<option value="">${esc(vazio)}</option>`:"")+L.map(([val,lab])=>`<option value="${esc(val)}"${val===v?" selected":""}>${esc(lab)}</option>`).join("")}
+const nomeConta=c=>`${esc(c.banco||"")}${c.banco?" · ":""}${esc(c.nome||"")}${c.num?" ••"+esc(String(c.num).slice(-4)):""}`;
+function desenha(){if(!el||el.hidden||!doc){conta();return}
+  const {out}=fila(),semAlvo=doLado().filter(([,c])=>!c.alvo),tabs=[["fila",`Para confirmar${out.length?" ("+out.length+")":""}`],["feitos","Já lançados"],["conf","Conexões"]];
+  let h=`<div class="bk-box"><div class="bk-top"><h2>Bancos</h2><button class="bk-x" data-x aria-label="Fechar">×</button></div>
+    <p class="bk-m">${demo()?"Modo demonstração: dados de exemplo, nada é gravado no banco de dados.<br>":""}${buscando?"Buscando no banco…":dados?`Última busca: ${new Date(dados.ts).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}. O Meu Pluggy atualiza os bancos uma vez por dia.`:"Ainda não busquei nada."}</p>
+    ${erro?`<p class="bk-e">${esc(erro)}</p>`:""}${dados&&dados.erros&&dados.erros.length?`<p class="bk-e">Algumas conexões falharam: ${esc(dados.erros.join(" · "))}. Se pedir, reconecte o banco no Meu Pluggy.</p>`:""}
+    <div class="bk-tabs">${tabs.map(([k,l])=>`<button data-aba="${k}" aria-pressed="${aba===k}">${l}</button>`).join("")}<button data-buscar ${buscando?"disabled":""}>Buscar agora</button></div>`;
+  if(aba==="fila"){
+    if(semAlvo.length)h+=`<p class="bk-m"><span class="bk-b pend" style="margin:0 6px 0 0">atenção</span>${semAlvo.length>1?semAlvo.length+" contas do banco ainda não estão ligadas":"Uma conta do banco ainda não está ligada"} a uma conta do app. Veja em Conexões.</p>`;
+    if(!doc.itens.length&&!demo())h+=`<p class="bk-m">Nenhum banco conectado ainda. Abra <b>Conexões</b> e cole os Item IDs do dashboard do Pluggy.</p>`;
+    else if(!out.length)h+=`<p class="bk-m">${dados?"Nada novo para confirmar. Tudo o que veio do banco já está no app.":""}</p>`;
+    else{h+=`<p class="bk-m">Confira a descrição e a categoria e toque em <b>Lançar</b>. O que não for gasto (pagamento de fatura, transferência entre suas contas) você pode ignorar.</p><div style="margin-bottom:8px"><button class="pri" data-todos>Lançar todos com categoria</button></div>`;
+      for(const x of out){const s=sugestao(x);
+        h+=`<div class="bk-it" data-it="${esc(x.t.id)}"><div><b style="font-weight:600">${br(x.data)}</b> · ${esc(limpa(x.t.desc))}<span class="bk-b ${x.saida?"out":"in"}">${x.saida?"saída":"entrada"}</span>${x.fat?`<span class="bk-b pend">parece pagamento de fatura</span>`:""}${x.t.parc>1?`<span class="bk-b pend">parcelado ${x.t.nparc?x.t.nparc+"/":""}${x.t.parc}x</span>`:""}
+          <small>${esc(P.nomeAlvo(x.alvo))} · ${nomeConta(x.c)}${x.t.cat?" · banco diz: "+esc(x.t.cat):""}</small></div><div class="bk-v">${brl(x.valor)}</div>
+          <div class="bk-f"><input data-desc value="${esc(s.desc)}" aria-label="Descrição" maxlength="60"><select data-cat aria-label="Categoria">${opts(P.cats(x.saida),s.cat,"Escolha a categoria")}</select><button class="pri" data-ok="${esc(x.t.id)}">Lançar</button><button data-ign="${esc(x.t.id)}">Ignorar</button></div></div>`}}}
+  else if(aba==="feitos"){const tx=Object.fromEntries((dados&&dados.txs||[]).map(t=>[t.id,t]));
+    const L=Object.entries(doc.feito).filter(([id])=>tx[id]&&doc.contas[tx[id].acc]&&doc.contas[tx[id].acc].lado===P.lado).sort((a,b)=>(tx[b[0]].data||"").localeCompare(tx[a[0]].data||"")).slice(0,80);
+    h+=L.length?`<p class="bk-m">O que veio do banco e o que aconteceu com cada um. “Voltar” devolve para a caixa (não apaga o lançamento do app).</p>`+L.map(([id,f])=>{const t=tx[id];const v=Math.abs(+t.valor||0);
+      return `<div class="bk-c"><span>${br(t.compra||t.data)} · ${esc(limpa(t.desc))} · ${brl(v)}<span class="bk-b ${f.s==="i"?"pend":"ok"}">${f.s==="l"?"lançado":f.s==="d"?"já estava no app":"ignorado"}</span></span><button data-desf="${esc(id)}">Voltar</button></div>`}).join(""):`<p class="bk-m">Nada por aqui ainda.</p>`}
+  else{const cs=Object.entries(doc.contas);
+    h+=`<div class="bk-sec">Conexões do Meu Pluggy</div><p class="bk-m">No <b>dashboard.pluggy.ai</b>, abra a sua aplicação: cada conexão tem um <b>Item ID</b>. Cole aqui, um por linha. Os IDs não são senha; as chaves ficam só no Supabase.</p>
+      <textarea id="bk-itens" placeholder="Um Item ID por linha" spellcheck="false">${esc(doc.itens.join("\n"))}</textarea>
+      <label for="bk-ini">Trazer lançamentos a partir de</label><input type="date" id="bk-ini" value="${esc(doc.inicio)}">
+      <div style="margin-top:10px"><button class="pri" data-salvar>Salvar e buscar</button></div>`;
+    if(dados&&dados.conexoes&&dados.conexoes.length)h+=`<div class="bk-sec">Situação</div>`+dados.conexoes.map(c=>`<div class="bk-c"><span>${esc(c.banco||c.id)}<small style="display:block;color:var(--mute)">${c.atualizado?"atualizado em "+esc(new Date(c.atualizado).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})):""}${c.erro?" · "+esc(c.erro):""}</small></span><span class="bk-b ${/UPDATED|UPDATING/.test(c.status)?"ok":"pend"}">${/UPDATED/.test(c.status)?"em dia":/UPDATING/.test(c.status)?"atualizando":"precisa reconectar"}</span></div>`).join("");
+    if(cs.length){h+=`<div class="bk-sec">Onde cada conta entra</div><p class="bk-m">Escolha se a conta é do Pessoal ou da Empresa e qual conta ou cartão do app ela representa. A conta do outro lado é escolhida na outra página.</p>`;
+      const saldo=Object.fromEntries((dados&&dados.contas||[]).map(c=>[c.id,c.saldo]));
+      for(const [id,c] of cs){h+=`<div class="bk-c"><span>${nomeConta(c)}<small style="display:block;color:var(--mute)">${c.tipo==="CREDIT"?"cartão de crédito":"conta"}${saldo[id]!=null?" · saldo no banco "+brl(c.tipo==="CREDIT"?Math.abs(saldo[id]):saldo[id]):""}</small></span>
+          <select data-lado="${esc(id)}" aria-label="Lado">${opts([["p","Pessoal"],["e","Empresa"],["x","Não usar"]],c.lado)}</select>
+          ${c.lado===P.lado?`<select data-alvo="${esc(id)}" aria-label="Conta do app">${opts(P.alvos(c.tipo==="CREDIT"),c.alvo,"Escolha a conta do app")}</select>`:`<small style="color:var(--mute)">${c.lado==="x"?"fica de fora":"escolha na página "+(c.lado==="e"?"Empresa":"Pessoal")}</small>`}</div>`}}}
+  el.innerHTML=h+`</div>`;conta()}
+function conta(){const b=document.getElementById("bk-btn");if(!b||!P)return;const n=doc?fila().out.length:0;b.innerHTML=`🏦${n?`<span class="bk-n">${n>99?"99+":n}</span>`:""}`;b.title=n?`${n} lançamentos do banco para confirmar`:"Bancos"}
+async function abre(){ui().hidden=false;try{if(!doc)await ler()}catch(e){erro=e.message}desenha();buscar(false)}
+function botao(){const t=document.getElementById("tema");if(!t||document.getElementById("bk-btn"))return;const b=document.createElement("button");b.type="button";b.className="tbtn";b.id="bk-btn";b.textContent="🏦";b.title="Bancos";b.setAttribute("aria-label","Lançamentos dos bancos");b.onclick=abre;(document.getElementById("tv-btn")||t).after(b)}
+return {
+  /* a página chama depois do login, com: lado ("p"|"e"), sb(), user(), existentes(), alvos(cartao), nomeAlvo(alvo), cats(saida) → [[valor,rótulo]], recentes(), lancar(lista) → ids */
+  async iniciar(adapt){P=adapt;botao();try{dados=JSON.parse(ls.get(ck())||"null");sug=JSON.parse(ls.get(ck()+"-sug")||"{}")}catch(e){}
+    try{await ler();await confere();conta();await buscar(false);conta()}catch(e){}},
+  abrir:abre,
+  /* a página chama depois de mudar os dados: confere de novo o que já está lançado */
+  atualizar(){clearTimeout(tAt);tAt=setTimeout(async()=>{if(!P||!doc)return;await confere();conta();if(el&&!el.hidden)desenha()},1200)}};
+})();
+</script>
+<!-- BANCO:FIM -->
 </head>
 <body>
 <header><div class="wrap bar">
@@ -497,12 +701,24 @@ async function sync(){
   catch(e){note(navigator.onLine?"Sem conexão com o banco de dados agora. O que aparece pode estar desatualizado.":"Sem internet: mostrando os dados salvos neste aparelho. As alterações serão enviadas quando a conexão voltar.",true)}
   finally{syncing=false}
 }
+/* bancos (Open Finance): o que a caixa "Para confirmar" precisa saber do lado Pessoal */
+const bancoPessoal={lado:"p",sb:()=>sb,user:()=>user,
+  existentes:()=>all().filter(t=>!t.prev&&+t.valor).flatMap(t=>t.tipo==="t"?[{id:t.id,alvo:"conta:"+t.de,saida:true,valor:Math.abs(+t.valor),data:t.data},{id:t.id+"#",alvo:"conta:"+t.para,saida:false,valor:Math.abs(+t.valor),data:t.data}]:[{id:t.id,alvo:t.cartao?"card:"+t.cartao:"conta:"+t.conta,saida:t.tipo==="d",valor:Math.abs(+t.valor),data:t.compra||t.data}]),
+  alvos:cartao=>cartao?uniq(Object.keys(CARDS),all().map(t=>t.cartao)).map(c=>["card:"+c,"Cartão "+c]):contaNames().map(c=>["conta:"+c,"Conta "+c]),
+  nomeAlvo:a=>(a.startsWith("card:")?"Cartão ":"Conta ")+a.slice(a.indexOf(":")+1),
+  cats:saida=>cats(saida?"d":"r").map(c=>[c,c]),
+  recentes:()=>all().filter(t=>t.desc&&t.cat&&t.tipo!=="t"&&!t.prev).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,60).map(t=>`${t.desc} → ${t.cat}`),
+  async lancar(L){const ids=[],list=L.map(x=>{const id=uid("t-");ids.push(id);const card=x.alvo.startsWith("card:")?x.alvo.slice(5):"",conta=card?"":x.alvo.slice(6);
+    if(!x.saida)return {id,tipo:"r",desc:x.desc,obs:x.obs,cat:x.cat,classe:"",conta,cartao:"",parcela:"",status:"pago",data:x.data,ts:Date.now()};
+    const fat=card&&CARDS[card];return {id,tipo:"d",desc:x.desc,obs:x.obs,cat:x.cat,classe:CAT_CLS[x.cat]||(/^projeto/i.test(x.cat)?"Reembolsável":""),conta,cartao:card,parcela:"",status:card?"pendente":"pago",data:fat?faturaDue(card,x.data):x.data,...(fat?{compra:x.data}:{}),ts:Date.now()}});
+    await saveTxs(list);return ids}};
 let started=false;
 async function start(u){
   user=u;$("auth").hidden=true;
   if(started){render();return}started=true;Trava.logado();
   try{localStorage.setItem(lastKey,JSON.stringify({id:u.id,email:u.email}))}catch(e){}if(loadCache(u)){mode="db";render()}else note("Carregando seus dados…");window.addEventListener("online",()=>{flush().then(sync)});
   await flush();await sync();
+  Banco.iniciar(bancoPessoal);
   if(!genDone){genDone=true;genRecs().then(()=>genPrevs())}
   setInterval(()=>{if(document.visibilityState!=="visible")return;if(Object.keys(dirty).length)flush();else sync()},60000);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastSync>15000)sync()});
@@ -566,7 +782,7 @@ function route(){
   for(const s of VIEWS){$(s).hidden=s!==v;const a=$("n-"+s);if(s===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")}
   if(v==="painel")drawTide();try{if(innerWidth<=700){const na=$("n-"+v);na.parentNode.scrollTo({left:na.offsetLeft-na.parentNode.clientWidth/2+na.clientWidth/2,behavior:"smooth"})}}catch(err){}
 }
-function render(){scheduleCache();
+function render(){scheduleCache();Banco.atualizar();
   $("mlabel").textContent=mName(cur.y,cur.m);
   if(mode==="loading"||mode==="local-wait")return;
   renderPainel();renderFilters();renderList();renderContas();renderBud();renderCartoes();renderAno();renderVenc();route();if(!vNotified){vNotified=true;setTimeout(()=>notifyVenc(false),1500)}
