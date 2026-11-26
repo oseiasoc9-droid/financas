@@ -708,7 +708,8 @@ async function sync(){
 /* bancos (Open Finance): o que a caixa "Para confirmar" precisa saber do lado Pessoal */
 /* pagamento de fatura no extrato do banco = soma das compras do cartão com aquele vencimento (as compras já estão no app) */
 function faturasBanco(){const g={};for(const t of all())if(t.cartao&&t.tipo==="d"&&!t.prev&&+t.valor){const k=t.cartao+"|"+t.data;g[k]=(g[k]||0)+Math.abs(+t.valor)}
-  return Object.entries(g).map(([k,v])=>({id:"fat:"+k,alvo:"*conta",saida:true,valor:Math.round(v*100)/100,data:k.split("|")[1]}))}
+  /* ate = vencimento + 5 dias: a fatura costuma ser paga entre o fechamento e alguns dias depois do vencimento */
+  return Object.entries(g).map(([k,v])=>{const due=k.split("|")[1];return {id:"fat:"+k,alvo:"*conta",saida:true,valor:Math.round(v*100)/100,data:due,ate:somaD(due,5)}})}
 const bancoPessoal={lado:"p",sb:()=>sb,user:()=>user,
   existentes:()=>[...faturasBanco(),...all().filter(t=>!t.prev&&+t.valor).flatMap(t=>t.tipo==="t"?[{id:t.id,alvo:"conta:"+t.de,saida:true,valor:Math.abs(+t.valor),data:t.data},{id:t.id+"#",alvo:"conta:"+t.para,saida:false,valor:Math.abs(+t.valor),data:t.data}]:[{id:t.id,alvo:t.cartao?"card:"+t.cartao:"conta:"+t.conta,saida:t.tipo==="d",valor:Math.abs(+t.valor),data:t.compra||t.data,...(t.cartao&&!t.compra?{ate:t.data}:{})}])],
   alvos:cartao=>cartao?uniq(Object.keys(CARDS),all().map(t=>t.cartao)).map(c=>["card:"+c,"Cartão "+c]):contaNames().map(c=>["conta:"+c,"Conta "+c]),
