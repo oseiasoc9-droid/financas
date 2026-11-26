@@ -392,14 +392,16 @@ async function confere(){/* o que já estava lançado no app fica ligado ao banc
 function sugestao(x){const s=sug[x.t.id]||{},ap=(doc.apr[P.lado]||{})[loja(x.t)];const op=P.cats(x.saida).map(o=>o[0]);
   const cat=ap&&op.includes(ap)?ap:(s.cat&&op.includes(s.cat)?s.cat:"");return {desc:s.desc||limpa(x.t.loja||x.t.desc),cat}}
 const limpa=s=>String(s||"").replace(/\*/g," ").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase()).slice(0,40);
+let iaDeNovo=false;
 async function pedeIA(){
-  if(!iaOk||pedindoIA||demo())return;const L=fila().out.filter(x=>!sug[x.t.id]&&!(doc.apr[P.lado]||{})[loja(x.t)]).slice(0,60);if(!L.length)return;
+  if(pedindoIA){iaDeNovo=true;return}
+  if(!iaOk||demo())return;const L=fila().out.filter(x=>!sug[x.t.id]&&!(doc.apr[P.lado]||{})[loja(x.t)]).slice(0,60);if(!L.length)return;
   pedindoIA=true;try{const cd=P.cats(true).map(o=>o[1]),cr=P.cats(false).map(o=>o[1]);
     const r=await P.sb().functions.invoke("banco",{body:{acao:"categorizar",lado:P.lado,catsD:cd,catsR:cr,recentes:P.recentes(),itens:L.map(x=>({saida:x.saida,valor:x.valor,desc:x.t.desc,loja:x.t.loja,catBanco:x.t.cat}))}});
     if(r.error||!r.data||!Array.isArray(r.data.itens)){if(r.error)iaOk=false;return}
     const lab=o=>Object.fromEntries(P.cats(o).map(([v,l])=>[l,v]));const LD=lab(true),LR=lab(false);
     for(const it of r.data.itens){const x=L[it.i];if(!x)continue;const m=x.saida?LD:LR;sug[x.t.id]={desc:String(it.desc||"").slice(0,60),cat:m[it.cat]||""}}
-    ls.set(ck()+"-sug",JSON.stringify(sug));desenha()}catch(e){}finally{pedindoIA=false}}
+    ls.set(ck()+"-sug",JSON.stringify(sug));desenha()}catch(e){}finally{pedindoIA=false;if(iaDeNovo){iaDeNovo=false;setTimeout(pedeIA,0)}}}
 async function lancar(ids){
   const F=fila().out,L=[];for(const id of ids){const x=F.find(y=>y.t.id===id);if(!x)continue;
     const row=el.querySelector(`[data-it="${CSS.escape(id)}"]`);const desc=(row?row.querySelector("[data-desc]").value:sugestao(x).desc).trim(),cat=row?row.querySelector("[data-cat]").value:sugestao(x).cat;
