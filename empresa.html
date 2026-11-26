@@ -383,7 +383,9 @@ function fila(){
     const data=t.compra||t.data;if(!data||data<doc.inicio)continue;
     const cred=c.tipo==="CREDIT",saida=cred?+t.valor>0:+t.valor<0,valor=Math.round(Math.abs(+t.valor||0)*100)/100;if(valor<0.01)continue;
     if(cred&&!saida)continue;/* no cartão, valor negativo é pagamento da fatura ou estorno */
-    const m=ex.find(x=>!usados.has(x.id)&&x.alvo===c.alvo&&!!x.saida===saida&&Math.abs(x.valor-valor)<0.011&&dif(x.data,data)<=3);
+    const par=x=>!usados.has(x.id)&&(x.alvo===c.alvo||(x.alvo==="*conta"&&c.alvo.startsWith("conta:")))&&!!x.saida===saida&&Math.abs(x.valor-valor)<0.011;
+    /* alvo "*conta": pagamento de fatura, que sai de qualquer conta. 1º pela data (até 3 dias); 2º compra de cartão lançada sem data da compra, só com o vencimento da fatura (ate): vale se a compra é de até 45 dias antes do vencimento */
+    const m=ex.find(x=>par(x)&&!x.ate&&dif(x.data,data)<=3)||ex.find(x=>par(x)&&x.ate&&data<=x.ate&&dif(x.ate,data)<=45);
     if(m){usados.add(m.id);dup.push([t.id,m.id]);continue}
     out.push({t,c,saida,valor,data,alvo:c.alvo,fat:saida&&!cred&&ehFatura(t)})}
   out.sort((a,b)=>b.data.localeCompare(a.data));return {out,dup}}
