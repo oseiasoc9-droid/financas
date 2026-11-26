@@ -365,7 +365,7 @@ async function buscar(forcar){
     else{const desde=doc.inicio<somaD(hoje(),-90)?somaD(hoje(),-90):doc.inicio;
       const x=await Promise.race([P.sb().functions.invoke("banco",{body:{acao:"buscar",itens:doc.itens,desde}}),new Promise(ok=>setTimeout(()=>ok({error:{tempo:1}}),60000))]);
       if(x.error){const st=x.error.context&&x.error.context.status;let msg="";try{msg=(await x.error.context.json()).erro||""}catch(e){}
-        throw new Error(x.error.tempo?"O banco demorou para responder. Tente de novo daqui a pouco.":st===404?"A função “banco” ainda não foi publicada no Supabase.":st===503?"Faltam as chaves do Pluggy nos segredos do Supabase.":msg||"Não consegui falar com o Pluggy.")}
+        throw new Error(x.error.tempo?"O banco demorou para responder. Tente de novo daqui a pouco.":st===404?"A função “banco” ainda não foi publicada no Supabase.":st===503?"Faltam as chaves do Pluggy nos segredos do Supabase.":st===403?"Esta conta não está liberada no segredo BANCO_USUARIOS do Supabase.":msg||"Não consegui falar com o Pluggy.")}
       r=x.data}
     dados={...r,ts:Date.now()};ls.set(ck(),JSON.stringify(dados));
     const novas=(r.contas||[]).filter(c=>!doc.contas[c.id]);

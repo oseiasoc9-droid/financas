@@ -3,16 +3,24 @@
 // Segredos (Supabase > Edge Functions > Secrets): PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET (do dashboard.pluggy.ai).
 // Os Item IDs (um por banco conectado) ficam no app, em Bancos > Conexões.
 // A IA usa o mesmo segredo ANTHROPIC_API_KEY da função "voz".
-// Só responde para quem está logado no app.
+// Segurança: só responde para quem está logado no app E está no segredo BANCO_USUARIOS; só o site do app pode chamar
+// pelo navegador (CORS); só faz leituras no Pluggy (GET), nunca pagamento ou transferência; não grava nada no banco de dados.
 import Anthropic from "npm:@anthropic-ai/sdk";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+// Só o site do app pode chamar a função pelo navegador.
+const ORIGENS = ["https://oseiasoc9-droid.github.io"];
+let CORS: Record<string, string> = {};
+const cors = (req: Request) => {
+  const o = req.headers.get("Origin") || "";
+  CORS = {
+    "Access-Control-Allow-Origin": ORIGENS.includes(o) ? o : ORIGENS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
 };
 const json = (b: unknown, status = 200) =>
-  new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+  new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 const API = "https://api.pluggy.ai";
 let chave = "", chaveAte = 0;
@@ -29,7 +37,7 @@ async function pluggyKey(): Promise<string> {
 }
 async function get(path: string) {
   const r = await fetch(API + path, { headers: { "X-API-KEY": await pluggyKey() } });
-  if (!r.ok) throw new Error(`Pluggy ${path.split("?")[0]}: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  if (!r.ok) { console.error("Pluggy", path.split("?")[0], r.status, (await r.text()).slice(0, 300)); throw new Error(`o Pluggy respondeu ${r.status}`); }
   return r.json();
 }
 const dia = (s: unknown) => (typeof s === "string" ? s.slice(0, 10) : "");
@@ -109,14 +117,21 @@ async function categorizar(b: Record<string, unknown>) {
 }
 
 Deno.serve(async (req) => {
+  cors(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ erro: "use POST" }, 405);
+  // 1) precisa estar logado no app: o Supabase confere o token da sessão (sem token ou com token falso, para aqui)
   const auth = req.headers.get("Authorization") || "";
   const apikey = req.headers.get("apikey") || "";
   const sbUrl = Deno.env.get("SUPABASE_URL");
   if (!auth.startsWith("Bearer ") || !sbUrl) return json({ erro: "sem login" }, 401);
   const u = await fetch(`${sbUrl}/auth/v1/user`, { headers: { Authorization: auth, apikey } });
   if (!u.ok) return json({ erro: "sem login" }, 401);
+  // 2) e precisa ser a conta liberada no segredo BANCO_USUARIOS (id ou e-mail do login). Sem o segredo, ninguém usa.
+  const quem = await u.json().catch(() => ({}));
+  const liberados = (Deno.env.get("BANCO_USUARIOS") || "").toLowerCase().split(/[\s,;]+/).filter(Boolean);
+  if (!liberados.length || !(liberados.includes(String(quem.id || "").toLowerCase()) || liberados.includes(String(quem.email || "").toLowerCase())))
+    return json({ erro: "conta não liberada" }, 403);
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return json({ erro: "corpo inválido" }, 400); }
   try {
