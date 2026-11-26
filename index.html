@@ -403,8 +403,15 @@ function fila(){
     if(m){usados.add(m.id);dup.push([t.id,m.id]);continue}
     out.push({t,c,saida,valor,data,alvo:c.alvo,fat:saida&&!cred&&ehFatura(t)})}
   out.sort((a,b)=>b.data.localeCompare(a.data));return {out,dup}}
+let autoRodando=false;
 async function confere(){/* o que já estava lançado no app fica ligado ao banco, sem perguntar */
-  const {dup}=fila();if(!dup.length)return;try{await muda(b=>{for(const [t,m] of dup)if(!b.feito[t])b.feito[t]={s:"d",t:m,d:hoje()}})}catch(e){}}
+  const {dup,out}=fila();if(dup.length)try{await muda(b=>{for(const [t,m] of dup)if(!b.feito[t])b.feito[t]={s:"d",t:m,d:hoje()}})}catch(e){}
+  /* movimentos que a página sabe lançar sozinha (ex.: guardar ou resgatar dinheiro da caixinha) */
+  if(!P.auto||autoRodando)return;const L=out.map(x=>{const a=P.auto(x);return a?{...x,...a,obs:`Banco: ${limpa(x.t.desc)}`}:null}).filter(Boolean);if(!L.length)return;
+  autoRodando=true;try{await ler();const F=L.filter(x=>!doc.feito[x.t.id]);if(!F.length)return;
+    await muda(b=>{for(const x of F)b.feito[x.t.id]={s:"l",t:"",d:hoje()}});/* marca antes, para nunca lançar duas vezes */
+    let novos;try{novos=await P.lancar(F)}catch(e){await muda(b=>{for(const x of F)delete b.feito[x.t.id]});return}
+    await muda(b=>{F.forEach((x,i)=>{if(b.feito[x.t.id])b.feito[x.t.id].t=novos[i]||""})})}catch(e){}finally{autoRodando=false}}
 function sugestao(x){const s=sug[x.t.id]||{},ap=(doc.apr[P.lado]||{})[loja(x.t)];const op=P.cats(x.saida).map(o=>o[0]);
   const cat=ap&&op.includes(ap)?ap:(s.cat&&op.includes(s.cat)?s.cat:"");return {desc:s.desc||limpa(x.t.loja||x.t.desc),cat}}
 const limpa=s=>String(s||"").replace(/\*/g," ").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase()).slice(0,40);
@@ -706,6 +713,12 @@ async function sync(){
   finally{syncing=false}
 }
 /* bancos (Open Finance): o que a caixa "Para confirmar" precisa saber do lado Pessoal */
+/* caixinhas e cofrinhos (Contas com tipo "caixinha"); dono = conta do banco onde ela fica */
+const caixinhas=()=>(cfg.contas||[]).filter(c=>c.tipo==="caixinha");
+const semAcento=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+function caixinhaDoBanco(conta,desc){const d=semAcento(desc);if(!/(dinheiro (reservado|retirado|guardado|resgatado)|aplicacao|resgate|caixinha|cofrinho)/.test(d))return null;
+  const nome=c=>semAcento(c.nome).replace(/^(caixinha|cofrinho)\s+/,"").trim();
+  const L=caixinhas().filter(c=>(!c.dono||c.dono===conta)&&nome(c).length>=3&&d.includes(nome(c)));return L.length===1?L[0]:null}
 /* pagamento de fatura no extrato do banco = soma das compras do cartão com aquele vencimento (as compras já estão no app) */
 function faturasBanco(){const g={};for(const t of all())if(t.cartao&&t.tipo==="d"&&!t.prev&&+t.valor){const k=t.cartao+"|"+t.data;g[k]=(g[k]||0)+Math.abs(+t.valor)}
   /* ate = vencimento + 5 dias: a fatura costuma ser paga entre o fechamento e alguns dias depois do vencimento */
@@ -714,10 +727,13 @@ const bancoPessoal={lado:"p",sb:()=>sb,user:()=>user,
   existentes:()=>[...faturasBanco(),...all().filter(t=>!t.prev&&+t.valor).flatMap(t=>t.tipo==="t"?[{id:t.id,alvo:"conta:"+t.de,saida:true,valor:Math.abs(+t.valor),data:t.data},{id:t.id+"#",alvo:"conta:"+t.para,saida:false,valor:Math.abs(+t.valor),data:t.data}]:[{id:t.id,alvo:t.cartao?"card:"+t.cartao:"conta:"+t.conta,saida:t.tipo==="d",valor:Math.abs(+t.valor),data:t.compra||t.data,...(t.cartao&&!t.compra?{ate:t.data}:{})}])],
   alvos:cartao=>cartao?uniq(Object.keys(CARDS),all().map(t=>t.cartao)).map(c=>["card:"+c,"Cartão "+c]):contaNames().map(c=>["conta:"+c,"Conta "+c]),
   nomeAlvo:a=>(a.startsWith("card:")?"Cartão ":"Conta ")+a.slice(a.indexOf(":")+1),
-  cats:saida=>cats(saida?"d":"r").map(c=>[c,c]),
+  cats:saida=>[...cats(saida?"d":"r").map(c=>[c,c]),...caixinhas().map(c=>["tr:"+c.nome,(saida?"Guardar em ":"Resgatar de ")+c.nome])],
+  /* guardar ou resgatar dinheiro de caixinha (ex.: MP "Dinheiro reservado IPVA" / "Dinheiro retirado IPVA") vira transferência sozinho */
+  auto:x=>{if(!x.alvo.startsWith("conta:"))return null;const c=caixinhaDoBanco(x.alvo.slice(6),x.t.desc);return c?{desc:"Transferência",cat:"tr:"+c.nome}:null},
   recentes:()=>all().filter(t=>t.desc&&t.cat&&t.tipo!=="t"&&!t.prev).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,60).map(t=>`${t.desc} → ${t.cat}`),
   async lancar(L){const ids=[],list=L.map(x=>{const id=uid("t-");ids.push(id);const card=x.alvo.startsWith("card:")?x.alvo.slice(5):"",conta=card?"":x.alvo.slice(6);
     const valor=Math.round(x.valor*100)/100;
+    if(String(x.cat).startsWith("tr:")){const cx=x.cat.slice(3);return {id,tipo:"t",valor,desc:x.desc||"Transferência",obs:x.obs,cat:"",classe:"",conta:"",cartao:"",parcela:"",status:"pago",data:x.data,de:x.saida?conta:cx,para:x.saida?cx:conta,ts:Date.now()}}
     if(!x.saida)return {id,tipo:"r",valor,desc:x.desc,obs:x.obs,cat:x.cat,classe:"",conta,cartao:"",parcela:"",status:"pago",data:x.data,ts:Date.now()};
     const fat=card&&CARDS[card];return {id,tipo:"d",valor,desc:x.desc,obs:x.obs,cat:x.cat,classe:CAT_CLS[x.cat]||(/^projeto/i.test(x.cat)?"Reembolsável":""),conta,cartao:card,parcela:"",status:card?"pendente":"pago",data:fat?faturaDue(card,x.data):x.data,...(fat?{compra:x.data}:{}),ts:Date.now()}});
     await saveTxs(list);return ids}};

@@ -11,7 +11,7 @@ Converse sempre em **português**. O Oseias não é programador. Explique o que 
 - **Supabase pessoal** do Oseias. URL e chave publishable estão no topo do `<script>` de cada página.
 - Tudo fica numa tabela `docs`, com as colunas `user_id`, `key`, `body` (jsonb), `rev` e `updated_at`, e RLS por usuário. Cada documento é um JSON.
 - O login é feito com e-mail e senha (`signInWithPassword`). Os cadastros novos estão travados. Ele e a esposa (Tainá) usam o mesmo login, às vezes ao mesmo tempo. Por isso **toda gravação precisa ler o `rev` atual, aplicar a mudança e gravar com `.eq("rev", rev)`, tentando de novo em caso de conflito**. Nunca sobrescreva às cegas.
-- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v34`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
+- `sw.js` é um service worker com cache do "shell" (constante `C`, hoje `financas-v35`). **Incremente a versão de `C` sempre que mudar `index.html`, `empresa.html` ou a lista `SHELL`**, senão o celular continua mostrando a versão antiga.
 - PWA: `manifest.webmanifest`, `icon.svg`, `icon-192.png`.
 - Tudo é HTML, CSS e JS num arquivo só por página, sem build e sem framework. Mantenha assim.
 - Para testar sem Supabase, `empresa.html?demo` usa localStorage (chaves `demo-emp-*`).
