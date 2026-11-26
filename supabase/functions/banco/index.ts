@@ -44,11 +44,22 @@ const dia = (s: unknown) => (typeof s === "string" ? s.slice(0, 10) : "");
 const ehId = (s: string) => /^[0-9a-f-]{20,40}$/i.test(s);
 
 async function buscar(itens: string[], desde: string) {
-  const conexoes: unknown[] = [], contas: unknown[] = [], txs: unknown[] = [], erros: string[] = [];
+  const conexoes: unknown[] = [], contas: unknown[] = [], txs: unknown[] = [], investimentos: unknown[] = [], erros: string[] = [];
   for (const item of itens) {
     try {
       const it = await get(`/items/${item}`);
       conexoes.push({ id: item, banco: it.connector?.name || "", status: it.status || "", erro: it.error?.message || it.statusDetail?.message || "", atualizado: it.lastUpdatedAt || it.updatedAt || "" });
+      // caixinhas, cofrinhos e outros investimentos (só o saldo; se o banco não informar, segue sem eles)
+      try {
+        const iv = await get(`/investments?itemId=${item}`);
+        for (const v of iv.results || []) {
+          investimentos.push({
+            id: v.id, item, banco: it.connector?.name || "", nome: v.name || "", tipo: v.type || "", sub: v.subtype || "",
+            saldo: typeof v.balance === "number" ? v.balance : (typeof v.amount === "number" ? v.amount : null),
+            data: dia(v.date || v.lastMonthRate?.date || ""), dono: v.owner || "",
+          });
+        }
+      } catch (_) { /* sem investimentos neste banco */ }
       const ac = await get(`/accounts?itemId=${item}`);
       for (const a of ac.results || []) {
         contas.push({
@@ -79,7 +90,7 @@ async function buscar(itens: string[], desde: string) {
       erros.push(`${item.slice(0, 8)}…: ${(e as Error).message}`);
     }
   }
-  return { conexoes, contas, txs, erros };
+  return { conexoes, contas, txs, investimentos, erros };
 }
 
 const SYSTEM = `Você classifica transações bancárias de um app de finanças brasileiro (família do Oseias e da Tainá, e as empresas dele de infoprodutos).
