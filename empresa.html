@@ -484,10 +484,139 @@ return {
 })();
 </script>
 <!-- BANCO:FIM -->
+<!-- VISUAL:INICIO (estilo limpo, inspirado na usabilidade do Mercado Pago; idêntico nas duas páginas) -->
+<style>
+:root{--soft:#143a63;--r:20px}
+:root[data-theme=light]{--soft:#eaf1f8}
+/* cards mais macios: cantos maiores, sem borda, mais respiro */
+.panel,.form,.ctile,.fig,.list,.plist,.box{border-radius:var(--r)}
+.panel,.ctile,.fig{border-color:transparent}
+.panel{padding:20px}
+.list{border:0;background:var(--panel)}
+.list .row{background:transparent}
+.btn{border-radius:12px}
+.btn:not(.pri):not(.warn){background:var(--soft);border-color:transparent;color:var(--sky)}
+.btn:not(.pri):not(.warn):hover{border-color:var(--sky)}
+.btn.pri{border-radius:12px}
+.figs{border:0;background:none;gap:10px;overflow:visible}
+.fig1{background:var(--panel);border-radius:18px}
+.tools input,.tools select{border-radius:12px;border-color:transparent}
+nav a{border-radius:12px}
+.seg{border-radius:12px}
+/* centavos pequenos ao lado do número */
+.cts sup{font-size:.5em;vertical-align:top;position:relative;top:.14em;margin-left:1px;letter-spacing:0}
+/* esconder valores (olho) */
+:root[data-oculto] :is(.ocv,#figs b,#figs .fig b,#ctgrid b,.iacc b,.irow .v b){filter:blur(9px);user-select:none}
+/* ícones de traço no lugar dos emojis */
+#tema,#tv-btn,#bk-btn{font-size:0!important;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;flex:none;padding:0}
+#tema::before,#tv-btn::before,#bk-btn::before{content:"";width:19px;height:19px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+#tema{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/%3E%3C/svg%3E")}
+:root[data-theme=light] #tema{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linejoin='round'%3E%3Cpath d='M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z'/%3E%3C/svg%3E")}
+#tv-btn{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E")}
+#bk-btn{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10l9-6 9 6'/%3E%3Cpath d='M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18'/%3E%3C/svg%3E")}
+.tbtn{border-color:transparent;background:var(--soft);border-radius:12px;width:38px;height:38px}
+/* saudação e troca Pessoal ⇄ Empresa (aparece no celular) */
+.ola{display:none;flex-direction:column;align-items:flex-start;line-height:1.2;margin-right:auto;min-width:0}
+.ola b{font-size:18px;font-weight:700}
+.ola a{display:inline-flex;margin-top:3px;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--soft);color:var(--sky);text-decoration:none;white-space:nowrap}
+/* menu de baixo e folha "Mais" (só no celular) */
+.bnav,.msheet{display:none}
+.bnav svg,.msheet svg{width:22px;height:22px;flex:none}
+.msheet{position:fixed;inset:0;z-index:35;background:rgba(3,14,28,.6);align-items:flex-end}
+.msheet.on{display:flex}
+.msheet .mbox{width:100%;background:var(--panel);border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto}
+.msheet .grab{width:42px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}
+.msheet a,.msheet button{display:flex;align-items:center;gap:14px;width:100%;min-height:50px;padding:0 2px;background:none;border:0;color:var(--ink);font:inherit;font-weight:600;font-size:16px;text-decoration:none;cursor:pointer;text-align:left}
+.msheet a svg,.msheet button svg{color:var(--sky)}
+.msheet small{margin-left:auto;color:var(--mute);font-weight:500;font-size:13px}
+.msheet hr{border:0;height:1px;background:var(--line);margin:6px 0}
+.msheet .mn{margin-left:auto;min-width:20px;padding:0 6px;border-radius:999px;background:rgba(255,92,138,.16);color:var(--pink);font-size:12px;font-weight:700;line-height:20px;text-align:center}
+@media(max-width:700px){
+  header nav,#add{display:none!important}
+  header{border-bottom:0}
+  header .bar{display:flex!important;flex-wrap:wrap;gap:10px 8px;padding-block:12px 8px}
+  header .brand{width:100%!important;display:flex;align-items:center;gap:8px;font-size:16px}
+  header .brand>.bt,header .brand>span:not(.ola),header .brand>small{display:none}
+  .ola{display:flex}
+  header #tema{display:none}
+  .tbtn{width:42px;height:42px;border-radius:14px;background:var(--panel)}
+  header .month{width:100%;justify-content:space-between;background:var(--panel);border-radius:14px;padding:5px;margin:0}
+  header .month .ico{width:34px;min-height:34px;border-radius:10px}
+  header .month span{flex:1;font-size:15px}
+  main,body>.wrap{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+  .bnav{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--panel);border-radius:22px 22px 0 0;padding:8px max(6px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 20px rgba(0,0,0,.22)}
+  .bnav a,.bnav button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:var(--mute);font:inherit;font-size:11.5px;font-weight:500;text-decoration:none;cursor:pointer;padding:4px 0;min-height:48px;justify-content:flex-end}
+  .bnav [aria-current]{color:var(--sky);font-weight:700}
+  .bnav .bplus{width:58px;height:58px;min-height:0;border-radius:50%;background:var(--sky);color:#06213b;justify-content:center;margin:-30px auto 0;box-shadow:0 6px 16px rgba(0,0,0,.32);font-size:0}
+  :root[data-theme=light] .bnav .bplus{color:#fff}
+  .bnav .bplus svg{width:28px;height:28px}
+  .bnav .bn{position:relative}
+  .bnav .bn i{position:absolute;top:-2px;left:calc(50% + 6px);min-width:17px;padding:0 4px;border-radius:999px;background:var(--pink);color:#fff;font-style:normal;font-size:10.5px;font-weight:700;line-height:17px}
+  h1{margin-top:14px}
+}
+/* Painel: aviso, saldo com abas, atalhos, últimos lançamentos */
+.ini{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;margin:18px 0 6px;align-items:start}
+.ini>div{min-width:0}
+.ialert{background:var(--panel);border-radius:var(--r);padding:16px 18px;margin:16px 0 0}
+.ialert .h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;font-size:16px}
+.ialert .h .badge{margin:0}
+.ialert p{margin:4px 0 12px;color:var(--mute);font-size:14px}
+.ialert .bb{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.itabs{display:flex;gap:2px;position:relative;z-index:1;overflow-x:auto;scrollbar-width:none}
+.itabs button{border:0;background:none;color:var(--mute);font:inherit;font-weight:500;padding:9px 16px;border-radius:16px 16px 0 0;cursor:pointer;white-space:nowrap;min-height:42px}
+.itabs button[aria-selected=true]{background:var(--panel);color:var(--ink);font-weight:700}
+.isaldo{background:var(--panel);border-radius:0 var(--r) var(--r) var(--r);padding:18px}
+.ibig{display:flex;align-items:center;gap:10px}
+.inum{font-weight:300;font-size:clamp(34px,4vw,44px);letter-spacing:-.02em;line-height:1.05;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ieye{background:none;border:0;color:var(--sky);cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:12px;padding:0}
+.ieye svg{width:24px;height:24px}
+.isub{margin:6px 0 12px;color:var(--mute);font-size:14px}
+.iacc{display:flex;align-items:center;gap:12px;width:100%;background:var(--soft);border:0;border-radius:16px;padding:10px 14px;margin-top:8px;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.iacc .t{flex:1;min-width:0}
+.iacc .t span{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iacc .t small{display:block;color:var(--mute);font-size:12.5px}
+.iacc b{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.iic{width:36px;height:36px;border-radius:50%;background:var(--panel);display:grid;place-items:center;color:var(--sky);flex:none}
+.iic svg{width:19px;height:19px}
+.ish{font-size:19px;font-weight:700;margin:0}
+.ilk{color:var(--sky);font-weight:600;font-size:14px;background:none;border:0;padding:4px 0;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.itiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 0}
+.itile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:92px;padding:10px 6px;border-radius:var(--r);background:var(--panel);border:0;color:var(--sky);font:inherit;font-size:13px;font-weight:600;line-height:1.15;text-align:center;cursor:pointer}
+.itile svg{width:25px;height:25px}
+.itile:hover,.iacc:hover{filter:brightness(1.08)}
+.iult{margin:22px 0 6px}
+.iult .hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.irow{display:flex;align-items:center;gap:12px;padding:9px 0;width:100%;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.irow .ic{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;flex:none;color:var(--ink)}
+.irow .ic svg{width:20px;height:20px}
+.irow .t{flex:1;min-width:0}
+.irow .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow .t small{display:block;color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow .t .badge{margin-left:6px;vertical-align:0}
+.irow .v{text-align:right;white-space:nowrap}
+.irow .v b{display:block;font-weight:600;font-variant-numeric:tabular-nums}
+.irow .v small{color:var(--mute);font-size:12.5px}
+.iult .ilist{background:var(--panel);border-radius:var(--r);padding:4px 16px}
+.iult .ilist .irow+.irow{border-top:1px solid var(--line)}
+/* fatura do cartão */
+.fhd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fhd h2{margin:0}
+.farr{display:flex;gap:6px}
+.farr button{width:38px;height:38px;border-radius:12px;border:0;background:var(--soft);color:var(--sky);font-size:20px;cursor:pointer}
+.fmeta{color:var(--mute);font-size:14px;margin:8px 0 2px}
+.ftot{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+.fpay{width:100%;min-height:50px;font-size:16px;margin-top:12px}
+@media(max-width:780px){.ini{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){#venc .vrow{grid-template-columns:3.4em minmax(0,1fr)}#venc .vrow .va{grid-column:2;justify-content:space-between}}
+@media(max-width:700px){header{position:static!important}.ctgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.ctile{padding:12px 14px!important}.ctile b{font-size:20px!important}.fpay{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:auto;z-index:14;box-shadow:0 6px 18px rgba(0,0,0,.3)}#ctdet{padding-bottom:70px}}
+</style>
+<!-- VISUAL:FIM -->
+
 </head>
 <body>
 <header><div class="wrap bar">
-  <div class="brand"><span>Minhas Finanças</span><small>Empresa</small><button type="button" class="tbtn" id="tema" aria-label="Mudar tema">☀️</button></div>
+  <div class="brand"><span class="ola"><b id="ola">Olá</b><a href="./">Empresa ⇄ Pessoal</a></span><span>Minhas Finanças</span><small>Empresa</small><button type="button" class="tbtn" id="tema" aria-label="Mudar tema">☀️</button></div>
   <nav><a href="#painel">Painel</a><a href="#panorama">Panorama</a><a href="#lancamentos">Lançamentos</a><a href="#produtos">Produtos</a><a href="#contas">Contas e cartões</a><a href="#impostos">Impostos</a><a href="#config">Configurar</a><a href="./" class="out">Pessoal ↗</a></nav>
   <div class="month"><button class="btn ico" id="prev" aria-label="Mês anterior">‹</button><span id="mlabel"></span><button class="btn ico" id="next" aria-label="Próximo mês">›</button></div>
   <button class="btn pri" id="add">+ Lançar</button>
@@ -1233,5 +1362,25 @@ $("aform").addEventListener("submit",async e=>{e.preventDefault();$("aerr").text
 Trava.sair=async()=>{try{if(sb)await sb.auth.signOut()}catch(e){}location.reload()};
 boot();
 </script>
+<!-- MENU:INICIO (menu de baixo no celular) -->
+<nav class="bnav" id="bnav" aria-label="Menu"><a href="#painel" data-go="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg>Painel</a><a href="#panorama" data-go="panorama"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 4 7-8"/><path d="M15 7h4v4"/></svg>Panorama</a><button type="button" class="bplus" data-click="add" aria-label="Lançar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><a href="#lancamentos" data-go="lancamentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Lançamentos</a><button type="button" id="bn-mais" class="bn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Mais<i id="bn-n" hidden></i></button></nav>
+<div class="msheet" id="msheet" role="dialog" aria-modal="true" aria-label="Mais opções"><div class="mbox"><div class="grab"></div><a href="#produtos" data-go="produtos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Produtos</a><a href="#contas" data-go="contas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>Contas e cartões</a><a href="#impostos" data-go="impostos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Impostos</a><a href="#config" data-go="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configurar</a><a href="./"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Pessoal<small>abrir ↗</small></a><hr><button type="button" id="ms-bk" data-click="bk-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>Bancos para confirmar<span class="mn" id="ms-bkn" hidden></span></button><button type="button" id="ms-tv" data-click="tv-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Bloqueio do app (PIN e digital)</button><button type="button" data-click="tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Tema<small id="ms-tema"></small></button></div></div>
+<script>
+/* menu de baixo (celular): marca a aba atual, abre a folha "Mais" e repassa os toques para os botões que já existem */
+(function(){const nav=document.getElementById("bnav"),sh=document.getElementById("msheet");if(!nav||!sh)return;
+const h=new Date().getHours(),o=document.getElementById("ola");if(o)o.textContent=h<5?"Boa noite":h<12?"Bom dia":h<18?"Boa tarde":"Boa noite";
+function marca(){const cur=(location.hash||"#painel").slice(1);let emMais=true;nav.querySelectorAll("[data-go]").forEach(a=>{const on=a.dataset.go===cur;if(on)emMais=false;on?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current")});const m=document.getElementById("bn-mais");emMais&&sh.querySelector('[data-go="'+cur+'"]')?m.setAttribute("aria-current","page"):m.removeAttribute("aria-current")}
+function fecha(){sh.classList.remove("on")}
+function abre(){const bk=document.getElementById("bk-btn"),n=bk&&bk.querySelector(".bk-n"),mn=document.getElementById("ms-bkn");if(mn){mn.hidden=!n;mn.textContent=n?n.textContent:""}const tm=document.getElementById("ms-tema");if(tm)tm.textContent=document.documentElement.dataset.theme==="light"?"claro":"escuro";const lo=document.getElementById("ms-sair");if(lo)lo.hidden=!document.getElementById("logout");document.getElementById("ms-bk").hidden=!bk;document.getElementById("ms-tv").hidden=!document.getElementById("tv-btn");sh.classList.add("on")}
+function toque(id){const b=document.getElementById(id);if(b)b.click()}
+nav.addEventListener("click",e=>{const c=e.target.closest("[data-click]");if(c){toque(c.dataset.click);return}if(e.target.closest("#bn-mais"))abre()});
+sh.addEventListener("click",e=>{if(e.target===sh){fecha();return}const c=e.target.closest("[data-click]");if(c){fecha();setTimeout(()=>toque(c.dataset.click),60);return}if(e.target.closest("a"))fecha()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")fecha()});
+window.addEventListener("hashchange",marca);marca();
+/* avisos pendentes do 🏦 aparecem também no "Mais" */
+const bt=()=>{const bk=document.getElementById("bk-btn"),n=bk&&bk.querySelector(".bk-n"),i=document.getElementById("bn-n");if(i){i.hidden=!n;i.textContent=n?n.textContent:""}};setInterval(bt,3000);bt();
+})();
+</script>
+<!-- MENU:FIM -->
 </body>
 </html>
