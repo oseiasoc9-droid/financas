@@ -528,7 +528,8 @@ function calc(k){const T=inMonth(k).filter(pass);const R={fat:0,qtd:0,reemb:0,ta
 function breakeven(R){const fator=R.midia>0?R.adsTot/R.midia:1.1383;const tx=R.fat>0?(R.taxa+R.reemb)/R.fat:0.06;const das=R.fat>0?R.das/R.fat:0.06;const m=1-tx-das;return m>0?fator/m:NaN}
 
 /* ---------- saldos ---------- */
-function saldos(ate){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;const add=(n,v)=>{if(n in S)S[n]+=v};
+/* sem data = saldo de hoje: lançamentos futuros (previsões) só entram quando a data chegar */
+function saldos(ate=todayS){const S={};for(const c of cfg.contas)S[c.nome]=+c.ini||0;const add=(n,v)=>{if(n in S)S[n]+=v};
  for(const t of all()){if(ate&&t.data>ate)continue;if(t.k==="venda"){const p=platOf(t.plat);if(p)add(p.conta,vendaLiq(t))}
   else if((t.k==="ads"||t.k==="desp")&&pagConta(t)&&t.pago!==false)add(pagConta(t),-txVal(t));
   else if(t.k==="pagfat")add(pagConta(t),-(+t.valor||0));
