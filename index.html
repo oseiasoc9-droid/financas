@@ -891,10 +891,10 @@ function faturaDe(x,usados){const d=semAcento(x.txt);let cs=null;
   for(const [re,L] of PAGA_FAT)if(re.test(d)){cs=L;break}
   /* "Pagamento de fatura" sem dizer para quem: é o cartão do próprio banco */
   if(!cs&&/pagamento.{0,12}fatura|pgto.{0,6}fat/.test(d)){const bn=semAcento(x.banco);for(const [re,L] of PAGA_FAT)if(re.test(bn)){cs=L;break}}
-  if(!cs)return null;const pend=new Set(all().filter(t=>t.cartao&&t.tipo==="d"&&!t.prev&&t.status==="pendente").map(t=>t.cartao+"|"+t.data));
-  const dia=s=>Date.parse(s+"T12:00")/864e5;
+  if(!cs)return null;const dia=s=>Date.parse(s+"T12:00")/864e5;
   const F=faturasBanco().filter(f=>!usados.has(f.id)&&cs.includes(f.id.slice(4).split("|")[0])&&x.data<=f.ate&&dia(f.ate)-dia(x.data)<=45)
-    .sort((a,b)=>(pend.has(b.id.slice(4))-pend.has(a.id.slice(4)))||(Math.abs(a.valor-x.valor)-Math.abs(b.valor-x.valor))||(Math.abs(dia(a.data)-dia(x.data))-Math.abs(dia(b.data)-dia(x.data))));
+    /* a mais parecida no valor; empate, a de vencimento mais perto do pagamento */
+    .sort((a,b)=>(Math.abs(a.valor-x.valor)-Math.abs(b.valor-x.valor))||(Math.abs(dia(a.data)-dia(x.data))-Math.abs(dia(b.data)-dia(x.data))));
   const f=F[0];if(!f)return null;const [card,due]=f.id.slice(4).split("|");return {id:f.id,card,due,valor:f.valor}}
 const bancoPessoal={lado:"p",sb:()=>sb,user:()=>user,
   faturaDe,
