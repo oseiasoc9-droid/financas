@@ -624,6 +624,27 @@ nav a{border-radius:12px}
 @media(max-width:780px){.ini{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:700px){#venc .vrow{grid-template-columns:3.4em minmax(0,1fr)}#venc .vrow .va{grid-column:2;justify-content:space-between}}
 @media(max-width:700px){header{position:static!important}.ctgrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.ctile{padding:12px 14px!important}.ctile b{font-size:20px!important}.fpay{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:auto;z-index:14;box-shadow:0 6px 18px rgba(0,0,0,.3)}#ctdet{padding-bottom:70px}}
+/* celular: tabelas viram cartões (cada linha um cartão, com o nome da coluna à esquerda); valores com etiqueta quebram a linha em vez de sair da caixa */
+html{overflow-x:clip}
+.kv>span{min-width:0}
+.kv b{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 6px;text-align:right}
+.kv b .badge{margin-left:0}
+@media(max-width:700px){
+  table.mc,table.mc tbody,table.mc tr,table.mc td{display:block;width:100%}
+  table.mc{font-size:15px;border:0!important;padding:0!important;background:none!important;border-radius:0!important}
+  table.mc tr.mh{display:none}
+  table.mc tr{background:var(--soft);border-radius:16px;padding:10px 14px;margin:0 0 8px;display:flex;flex-direction:column}
+  table.mc td{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;padding:3px 0!important;border:0!important;text-align:right;white-space:normal;min-width:0;flex-wrap:wrap}
+  table.mc td::before{content:attr(data-l);color:var(--mute);font-size:13px;font-weight:500;text-align:left;margin-right:auto}
+  table.mc td[data-l=""]::before,table.mc td.mt::before,table.mc td.mw::before{display:none}
+  table.mc td.mt{order:-1;display:block;font-weight:700;font-size:16px;text-align:left;padding-bottom:4px!important}
+  table.mc td.mt small{display:block;font-weight:400}
+  table.mc td.mw{display:block;text-align:left}
+  table.mc td:empty{display:none}
+  table.mc td input,table.mc td select{flex:1 1 9em;min-width:0;max-width:100%}
+  table.mc td .badge{margin-left:0}
+  .tscroll:has(>table.mc){overflow:visible}
+}
 </style>
 <!-- VISUAL:FIM -->
 
