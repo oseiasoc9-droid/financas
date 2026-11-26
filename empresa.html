@@ -1192,9 +1192,10 @@ async function load(){const rows=await store.all();months={};for(const r of rows
  if(!cfgRev)await saveCfg()}
 /* bancos (Open Finance): o que a caixa "Para confirmar" precisa saber do lado Empresa */
 const bancoEmpresa={lado:"e",sb:()=>DEMO?null:sb,user:()=>user,
-  existentes(){const out=[];for(const t of Object.values(months).flat()){const v=Math.abs(+(t.k==="ads"?t.cobrado:t.valor)||0);if(!v||t.prev)continue;
+  existentes(){const out=[];for(const t of Object.values(months).flat()){const v=Math.abs(+(t.k==="ads"?t.cobrado:t.k==="venda"?t.bruto:t.valor)||0);if(!v||t.prev)continue;
     if(t.k==="desp"||t.k==="ads"||t.k==="pagfat")out.push({id:t.id,alvo:t.pag||"",saida:true,valor:v,data:t.data});
     else if(t.k==="rec")out.push({id:t.id,alvo:"conta:"+t.conta,saida:+t.valor>0?false:true,valor:v,data:t.data});
+    else if(t.k==="venda"){/* venda que cai direto numa conta (ex.: Pix direto → Nubank PJ): o banco mostra o valor líquido */const pl=cfg.plats.find(p=>p.nome===t.plat),liq=r2((+t.bruto||0)-(+t.taxa||0)-(+t.reemb||0));if(pl&&pl.conta&&liq>0)out.push({id:t.id,alvo:"conta:"+pl.conta,saida:false,valor:liq,data:t.data})}
     else if(t.k==="transf"){out.push({id:t.id,alvo:"conta:"+t.de,saida:true,valor:r2(v+(+t.taxa||0)),data:t.data});out.push({id:t.id+"#",alvo:"conta:"+t.para,saida:false,valor:v,data:t.data})}}return out},
   alvos:cartao=>cartao?cfg.cards.map(c=>["card:"+c.nome,"Cartão "+c.nome]):cfg.contas.map(c=>["conta:"+c.nome,"Conta "+c.nome]),
   nomeAlvo:a=>(a.startsWith("card:")?"Cartão ":"Conta ")+a.slice(a.indexOf(":")+1),
