@@ -1,5 +1,5 @@
 /* Minhas Finanças: guarda o app no aparelho para abrir sem internet. Os dados ficam no app; aqui só os arquivos. */
-const C="financas-v33";
+const C="financas-v34";
 const SHELL=["./","./index.html","./empresa.html","./manifest.webmanifest","./icon.svg","https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

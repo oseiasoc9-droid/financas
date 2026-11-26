@@ -717,8 +717,9 @@ const bancoPessoal={lado:"p",sb:()=>sb,user:()=>user,
   cats:saida=>cats(saida?"d":"r").map(c=>[c,c]),
   recentes:()=>all().filter(t=>t.desc&&t.cat&&t.tipo!=="t"&&!t.prev).sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,60).map(t=>`${t.desc} → ${t.cat}`),
   async lancar(L){const ids=[],list=L.map(x=>{const id=uid("t-");ids.push(id);const card=x.alvo.startsWith("card:")?x.alvo.slice(5):"",conta=card?"":x.alvo.slice(6);
-    if(!x.saida)return {id,tipo:"r",desc:x.desc,obs:x.obs,cat:x.cat,classe:"",conta,cartao:"",parcela:"",status:"pago",data:x.data,ts:Date.now()};
-    const fat=card&&CARDS[card];return {id,tipo:"d",desc:x.desc,obs:x.obs,cat:x.cat,classe:CAT_CLS[x.cat]||(/^projeto/i.test(x.cat)?"Reembolsável":""),conta,cartao:card,parcela:"",status:card?"pendente":"pago",data:fat?faturaDue(card,x.data):x.data,...(fat?{compra:x.data}:{}),ts:Date.now()}});
+    const valor=Math.round(x.valor*100)/100;
+    if(!x.saida)return {id,tipo:"r",valor,desc:x.desc,obs:x.obs,cat:x.cat,classe:"",conta,cartao:"",parcela:"",status:"pago",data:x.data,ts:Date.now()};
+    const fat=card&&CARDS[card];return {id,tipo:"d",valor,desc:x.desc,obs:x.obs,cat:x.cat,classe:CAT_CLS[x.cat]||(/^projeto/i.test(x.cat)?"Reembolsável":""),conta,cartao:card,parcela:"",status:card?"pendente":"pago",data:fat?faturaDue(card,x.data):x.data,...(fat?{compra:x.data}:{}),ts:Date.now()}});
     await saveTxs(list);return ids}};
 let started=false;
 async function start(u){
