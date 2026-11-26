@@ -387,11 +387,19 @@ function fila(){
     /* alvo "*conta": pagamento de fatura, que sai de qualquer conta. 1º pela data (até 3 dias); 2º compra de cartão lançada sem data da compra, só com o vencimento da fatura (ate): vale se a compra é de até 45 dias antes do vencimento */
     const m=ex.find(x=>par(x)&&!x.ate&&dif(x.data,data)<=3)||ex.find(x=>par(x)&&x.ate&&data<=x.ate&&dif(x.ate,data)<=45);
     if(m){usados.add(m.id);dup.push([t.id,m.id]);continue}
-    out.push({t,c,saida,valor,data,alvo:c.alvo,fat:saida&&!cred&&ehFatura(t)})}
+    /* pagamento que não bateu pelo valor: a página pode dizer de qual fatura parece ser (pelo banco que recebeu o Pix) */
+    const fp=saida&&!cred&&P.faturaDe?P.faturaDe({txt:[t.desc,t.raw,t.loja].join(" "),banco:[c.banco,c.nome].join(" "),alvo:c.alvo,data,valor},usados):null;
+    out.push({t,c,saida,valor,data,alvo:c.alvo,fat:saida&&!cred&&(!!fp||ehFatura(t)),fp})}
   out.sort((a,b)=>b.data.localeCompare(a.data));return {out,dup}}
-let autoRodando=false;
+let autoRodando=false,ligRodando=false;
+/* conta para a página o que ficou ligado (ex.: pagamento de fatura: as compras daquela fatura ficam pagas); cada ligação é avisada uma vez só (pg) */
+async function avisaLigados(){if(!P.ligou||ligRodando||!dados)return;const tx=Object.fromEntries((dados.txs||[]).map(t=>[t.id,t]));
+  const L=Object.entries(doc.feito).filter(([id,f])=>f.s==="d"&&f.t&&!f.pg&&tx[id]&&doc.contas[tx[id].acc]&&doc.contas[tx[id].acc].lado===P.lado);if(!L.length)return;
+  ligRodando=true;try{await P.ligou(L.map(([id,f])=>({id:f.t,alvo:doc.contas[tx[id].acc].alvo||"",data:tx[id].compra||tx[id].data,valor:Math.abs(+tx[id].valor||0)})));
+    await muda(b=>{for(const [id] of L)if(b.feito[id])b.feito[id].pg=1})}catch(e){}finally{ligRodando=false}}
 async function confere(){/* o que já estava lançado no app fica ligado ao banco, sem perguntar */
   const {dup,out}=fila();if(dup.length)try{await muda(b=>{for(const [t,m] of dup)if(!b.feito[t])b.feito[t]={s:"d",t:m,d:hoje()}})}catch(e){}
+  await avisaLigados();
   /* movimentos que a página sabe lançar sozinha (ex.: guardar ou resgatar dinheiro da caixinha) */
   if(!P.auto||autoRodando)return;const L=out.map(x=>{const a=P.auto(x);return a?{...x,...a,obs:`Banco: ${limpa(x.t.desc)}`}:null}).filter(Boolean);if(!L.length)return;
   autoRodando=true;try{await ler();const F=L.filter(x=>!doc.feito[x.t.id]);if(!F.length)return;
@@ -421,13 +429,16 @@ async function lancar(ids){
     await muda(b=>{L.forEach((x,i)=>{b.feito[x.t.id]={s:"l",t:novos[i]||"",d:hoje()};const k=loja(x.t);if(k){b.apr[P.lado]=b.apr[P.lado]||{};b.apr[P.lado][k]=x.cat}})});
     aviso(L.length>1?`${L.length} lançamentos feitos`:"Lançado")}catch(e){aviso("Não consegui lançar: "+(e.message||e))}
   desenha()}
+/* ele confirmou de qual fatura é o pagamento: fica ligado, e as compras dessa fatura ficam pagas */
+async function essaFatura(id){const x=fila().out.find(y=>y.t.id===id);if(!x||!x.fp)return;
+  try{await muda(b=>{if(!b.feito[id])b.feito[id]={s:"d",t:x.fp.id,d:hoje()}});await avisaLigados();aviso(`Fatura ${x.fp.card} marcada como paga`)}catch(e){aviso(e.message)}desenha()}
 async function ignorar(ids){try{await muda(b=>{for(const id of ids)b.feito[id]={s:"i",d:hoje()}})}catch(e){aviso(e.message)}desenha()}
 function aviso(s){try{toast(s,false)}catch(e){}}
 
 /* ---------- tela ---------- */
 function ui(){if(el)return el;el=document.createElement("div");el.id="banco";el.hidden=true;el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Bancos");document.body.appendChild(el);
   el.addEventListener("click",e=>{if(e.target===el)return fecha();const b=e.target.closest("button");if(!b)return;const a=b.dataset;
-    if(a.x!==undefined)fecha();else if(a.aba){aba=a.aba;desenha()}else if(a.ok)lancar([a.ok]);else if(a.ign)ignorar([a.ign]);
+    if(a.x!==undefined)fecha();else if(a.aba){aba=a.aba;desenha()}else if(a.ok)lancar([a.ok]);else if(a.fp)essaFatura(a.fp);else if(a.ign)ignorar([a.ign]);
     else if(a.todos!==undefined){const ids=fila().out.filter(x=>!x.fat&&(el.querySelector(`[data-it="${CSS.escape(x.t.id)}"] [data-cat]`)||{}).value).map(x=>x.t.id);if(ids.length)lancar(ids);else aviso("Nenhum lançamento com categoria escolhida.")}
     else if(a.buscar!==undefined)buscar(true);else if(a.salvar!==undefined)salvaConfig();else if(a.desf){desfaz(a.desf)}});
   el.addEventListener("change",async e=>{const s=e.target;if(s.dataset.lado||s.dataset.alvo){const id=s.dataset.lado||s.dataset.alvo;
@@ -452,9 +463,9 @@ function desenha(){if(!el||el.hidden||!doc){conta();return}
     else if(!out.length)h+=`<p class="bk-m">${dados?"Nada novo para confirmar. Tudo o que veio do banco já está no app.":""}</p>`;
     else{h+=`<p class="bk-m">Confira a descrição e a categoria e toque em <b>Lançar</b>. O que não for gasto (pagamento de fatura, transferência entre suas contas) você pode ignorar.</p><div style="margin-bottom:8px"><button class="pri" data-todos>Lançar todos com categoria</button></div>`;
       for(const x of out){const s=sugestao(x);
-        h+=`<div class="bk-it" data-it="${esc(x.t.id)}"><div><b style="font-weight:600">${br(x.data)}</b> · ${esc(limpa(x.t.desc))}<span class="bk-b ${x.saida?"out":"in"}">${x.saida?"saída":"entrada"}</span>${x.fat?`<span class="bk-b pend">parece pagamento de fatura</span>`:""}${x.t.parc>1?`<span class="bk-b pend">parcelado ${x.t.nparc?x.t.nparc+"/":""}${x.t.parc}x</span>`:""}
-          <small>${esc(P.nomeAlvo(x.alvo))} · ${nomeConta(x.c)}${x.t.cat?" · banco diz: "+esc(x.t.cat):""}</small></div><div class="bk-v">${brl(x.valor)}</div>
-          <div class="bk-f"><input data-desc value="${esc(s.desc)}" aria-label="Descrição" maxlength="60"><select data-cat aria-label="Categoria">${opts(P.cats(x.saida),s.cat,"Escolha a categoria")}</select><button class="pri" data-ok="${esc(x.t.id)}">Lançar</button><button data-ign="${esc(x.t.id)}">Ignorar</button></div></div>`}}}
+        h+=`<div class="bk-it" data-it="${esc(x.t.id)}"><div><b style="font-weight:600">${br(x.data)}</b> · ${esc(limpa(x.t.desc))}<span class="bk-b ${x.saida?"out":"in"}">${x.saida?"saída":"entrada"}</span>${x.fp?`<span class="bk-b pend">parece a fatura ${esc(x.fp.card)} de ${br(x.fp.due)}</span>`:x.fat?`<span class="bk-b pend">parece pagamento de fatura</span>`:""}${x.t.parc>1?`<span class="bk-b pend">parcelado ${x.t.nparc?x.t.nparc+"/":""}${x.t.parc}x</span>`:""}
+          <small>${esc(P.nomeAlvo(x.alvo))} · ${nomeConta(x.c)}${x.t.cat?" · banco diz: "+esc(x.t.cat):""}${x.fp?` · no app essa fatura tem ${brl(x.fp.valor)}`:""}</small></div><div class="bk-v">${brl(x.valor)}</div>
+          <div class="bk-f"><input data-desc value="${esc(s.desc)}" aria-label="Descrição" maxlength="60"><select data-cat aria-label="Categoria">${opts(P.cats(x.saida),s.cat,"Escolha a categoria")}</select>${x.fp?`<button class="pri" data-fp="${esc(x.t.id)}">É essa fatura (marcar paga)</button>`:""}<button class="${x.fp?"":"pri"}" data-ok="${esc(x.t.id)}">Lançar</button><button data-ign="${esc(x.t.id)}">Ignorar</button></div></div>`}}}
   else if(aba==="feitos"){const tx=Object.fromEntries((dados&&dados.txs||[]).map(t=>[t.id,t]));
     const L=Object.entries(doc.feito).filter(([id])=>tx[id]&&doc.contas[tx[id].acc]&&doc.contas[tx[id].acc].lado===P.lado).sort((a,b)=>(tx[b[0]].data||"").localeCompare(tx[a[0]].data||"")).slice(0,80);
     h+=L.length?`<p class="bk-m">O que veio do banco e o que aconteceu com cada um. “Voltar” devolve para a caixa (não apaga o lançamento do app).</p>`+L.map(([id,f])=>{const t=tx[id];const v=Math.abs(+t.valor||0);
