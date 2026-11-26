@@ -64,7 +64,10 @@ async function buscar(itens: string[], desde: string) {
             const cc = t.creditCardMetadata || {};
             txs.push({
               id: t.id, acc: a.id, data: dia(t.date), desc: t.description || "", raw: t.descriptionRaw || "",
-              valor: t.amount, tipo: t.type || "", cat: t.category || "", st: t.status || "",
+              // compra em outra moeda (ex.: assinatura em dólar): usa o valor em reais quando o banco informa
+              valor: t.currencyCode && t.currencyCode !== "BRL" && typeof t.amountInAccountCurrency === "number" ? t.amountInAccountCurrency : t.amount,
+              moeda: t.currencyCode || "", orig: t.amount,
+              tipo: t.type || "", cat: t.category || "", st: t.status || "",
               loja: t.merchant?.businessName || t.merchant?.name || "",
               parc: cc.totalInstallments || 0, nparc: cc.installmentNumber || 0, compra: dia(cc.purchaseDate),
             });
